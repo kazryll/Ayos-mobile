@@ -17,7 +17,7 @@ export default function SignInScreen() {
       {/* Email Input */}
       <TextInput
         placeholder="Email"
-        
+        placeholderTextColor="#9c9c9cff"
         style={styles.input}
         keyboardType="email-address"
         autoCapitalize="none"

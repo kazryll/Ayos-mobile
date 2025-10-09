@@ -3,6 +3,10 @@
 # dependencies
 node_modules/
 
+# env files (IMPORTANT for security: mostly API keys)
+.env
+.env*.local
+
 # Expo
 .expo/
 dist/

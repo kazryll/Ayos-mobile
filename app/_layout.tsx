@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { Platform } from "react-native";
 import InstallButton from "../components/InstallButton";
 
+
 export default function Layout() {
   useEffect(() => {
     console.log("📢 Layout mounted. Platform:", Platform.OS);

@@ -1,10 +1,60 @@
-import { Stack } from "expo-router";
-import { useEffect } from "react";
+import { Stack, useRouter, useSegments } from "expo-router";
+import { useEffect, useState } from "react";
 import { Platform } from "react-native";
 import InstallButton from "../components/InstallButton";
-
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth } from '../config/firebase';
 
 export default function Layout() {
+  const router = useRouter();
+  const segments = useSegments();
+  const [user, setUser] = useState<User | null>(null); // ← FIX: Add proper type
+  const [authLoading, setAuthLoading] = useState(true);
+  const [initialRouteChecked, setInitialRouteChecked] = useState(false);
+
+  // Auth State Listener
+  useEffect(() => {
+    console.log("🔥 Setting up auth state listener");
+    
+    const unsubscribe = onAuthStateChanged(auth, (user: User | null) => { // ← FIX: Add type here too
+      console.log("🔥 Auth state changed:", user ? `User: ${user.email}` : "No user");
+      setUser(user);
+      setAuthLoading(false);
+    });
+
+    return unsubscribe;
+  }, []);
+
+  // Navigation logic
+  useEffect(() => {
+    if (authLoading) {
+      console.log("⏳ Still loading auth...");
+      return;
+    }
+
+    if (!initialRouteChecked) {
+      console.log("📍 Initial route check. Segments:", segments, "User:", user ? "yes" : "no");
+      
+      // Initial route determination
+      if (!user) {
+        // No user - redirect to signin if not already there
+        if (segments[0] !== 'signin' && segments[0] !== 'signup') {
+          console.log("🔒 No user - redirecting to signin");
+          router.replace('/signin');
+        }
+      } else {
+        // User exists - redirect to home if not already there
+        if (segments[0] !== 'home') {
+          console.log("🚀 User found - redirecting to home");
+          router.replace('/home');
+        }
+      }
+      
+      setInitialRouteChecked(true);
+    }
+  }, [authLoading, user, segments, initialRouteChecked]);
+
+  // Your existing PWA setup effects
   useEffect(() => {
     console.log("📢 Layout mounted. Platform:", Platform.OS);
 
@@ -29,7 +79,6 @@ export default function Layout() {
       if (!existing) {
         const link = document.createElement("link");
         link.rel = "manifest";
-        // ✅ absolute path ensures it's always found at site root
         link.href = `${window.location.origin}/manifest.json`;
         document.head.appendChild(link);
         console.log("✅ Manifest manually injected:", link.href);
@@ -42,11 +91,10 @@ export default function Layout() {
       let deferredPrompt: any;
 
       window.addEventListener("beforeinstallprompt", (e) => {
-        e.preventDefault(); // Prevent the mini-infobar
+        e.preventDefault();
         deferredPrompt = e;
         console.log("📥 PWA install prompt is ready");
 
-        // Optional: Show your own install button
         const installButton = document.getElementById("install-button");
         if (installButton) {
           installButton.style.display = "block";
@@ -65,6 +113,14 @@ export default function Layout() {
       });
     }
   }, []);
+
+  // Show nothing while checking auth state
+  if (authLoading) {
+    console.log("🔄 Auth loading...");
+    return null;
+  }
+
+  console.log("🎯 Rendering app with user:", user ? "yes" : "no");
 
   return (
     <>

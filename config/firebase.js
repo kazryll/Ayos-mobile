@@ -5,13 +5,13 @@ import { getFirestore } from "firebase/firestore";
 
 // Web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyBAkWQ7Hh-CXh4hBSj3jseo2nmxtnZfRg0",
-  authDomain: "ayos-f5dcb.firebaseapp.com",
-  projectId: "ayos-f5dcb",
-  storageBucket: "ayos-f5dcb.firebasestorage.app",
-  messagingSenderId: "480814117517",
-  appId: "1:480814117517:web:167d0a2125237e0029a8c4",
-  measurementId: "G-YFKH03T81E",
+  apiKey: "AIzaSyD6quUmkxB1w2782ReFualVbGzlUSUbIWw",
+  authDomain: "ayos-lgu-web-app.firebaseapp.com",
+  projectId: "ayos-lgu-web-app",
+  storageBucket: "ayos-lgu-web-app.firebasestorage.app",
+  messagingSenderId: "183096564899",
+  appId: "1:183096564899:web:edd2ecd570ed6bf719f316",
+  measurementId: "G-MWZ6TEV35K",
 };
 
 // Initialize Firebase

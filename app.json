@@ -23,7 +23,9 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "bundler": "metro",
+      "indexHtmlPath": "./web/index.html"  // tells Expo’s web build system to use custom HTML template (web/index. html).
     },
     "plugins": [
       "expo-router",

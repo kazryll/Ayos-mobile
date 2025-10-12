@@ -12,7 +12,7 @@ export default function SignInScreen() {
       />
 
       {/* Title */}
-      <Text style={styles.title}>Login to your account</Text>
+      <Text style={styles.title}>Login to MY MWEHEHHE account</Text>
 
       {/* Email Input */}
       <TextInput

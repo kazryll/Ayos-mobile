@@ -117,6 +117,10 @@ export default function HomeScreen() {
     }
   };
 
+  const getReportCategory = (report: any) => {
+  return report && report.category ? report.category : 'General';
+};
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>

@@ -1,23 +1,19 @@
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../config/firebase";
-import { getUserReports } from "./reports";
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../config/firebase';
+import { getUserReports } from './reports';
 
-// Get user stats for the home screen
 export const getUserStats = async (userId) => {
   try {
     const reports = await getUserReports(userId);
-
-    const stats = {
+    
+    return {
       totalReports: reports.length,
-      pendingReports: reports.filter((r) => r.status === "pending").length,
-      inProgressReports: reports.filter((r) => r.status === "in-progress")
-        .length,
-      resolvedReports: reports.filter((r) => r.status === "resolved").length,
+      pendingReports: reports.filter(r => r.status === 'pending').length,
+      inProgressReports: reports.filter(r => r.status === 'in-progress').length,
+      resolvedReports: reports.filter(r => r.status === 'resolved').length,
     };
-
-    return stats;
   } catch (error) {
-    console.error("Error getting user stats:", error);
+    console.error('Error getting user stats:', error);
     return {
       totalReports: 0,
       pendingReports: 0,
@@ -27,16 +23,15 @@ export const getUserStats = async (userId) => {
   }
 };
 
-// Get user profile data
 export const getUserProfile = async (userId) => {
   try {
-    const userDoc = await getDoc(doc(db, "users", userId));
+    const userDoc = await getDoc(doc(db, 'users', userId));
     if (userDoc.exists()) {
       return userDoc.data();
     }
     return null;
   } catch (error) {
-    console.error("Error getting user profile:", error);
+    console.error('Error getting user profile:', error);
     return null;
   }
 };

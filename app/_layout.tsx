@@ -1,29 +1,42 @@
 import { Stack, useRouter, useSegments } from "expo-router";
+import { onAuthStateChanged, User } from "firebase/auth";
 import { useEffect, useState } from "react";
 import { Platform } from "react-native";
 import InstallButton from "../components/InstallButton";
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from '../config/firebase';
+import { auth } from "../config/firebase";
+import * as SplashScreen from 'expo-splash-screen';
+
+SplashScreen.preventAutoHideAsync();
 
 export default function Layout() {
   const router = useRouter();
   const segments = useSegments();
-  const [user, setUser] = useState<User | null>(null); // ← FIX: Add proper type
+  const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [initialRouteChecked, setInitialRouteChecked] = useState(false);
 
   // Auth State Listener
   useEffect(() => {
     console.log("🔥 Setting up auth state listener");
-    
-    const unsubscribe = onAuthStateChanged(auth, (user: User | null) => { // ← FIX: Add type here too
-      console.log("🔥 Auth state changed:", user ? `User: ${user.email}` : "No user");
+
+    const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
+      console.log(
+        "🔥 Auth state changed:",
+        user ? `User: ${user.email}` : "No user"
+      );
       setUser(user);
       setAuthLoading(false);
     });
 
     return unsubscribe;
   }, []);
+
+  // Hide splash screen when auth is loaded
+  useEffect(() => {
+    if (!authLoading) {
+      SplashScreen.hideAsync(); // ← HIDE SPLASH WHEN AUTH LOADED
+    }
+  }, [authLoading]);
 
   // Navigation logic
   useEffect(() => {
@@ -33,23 +46,28 @@ export default function Layout() {
     }
 
     if (!initialRouteChecked) {
-      console.log("📍 Initial route check. Segments:", segments, "User:", user ? "yes" : "no");
-      
+      console.log(
+        "📍 Initial route check. Segments:",
+        segments,
+        "User:",
+        user ? "yes" : "no"
+      );
+
       // Initial route determination
       if (!user) {
         // No user - redirect to signin if not already there
-        if (segments[0] !== 'signin' && segments[0] !== 'signup') {
+        if (segments[0] !== "signin" && segments[0] !== "signup") {
           console.log("🔒 No user - redirecting to signin");
-          router.replace('/signin');
+          router.replace("/signin");
         }
       } else {
         // User exists - redirect to home if not already there
-        if (segments[0] !== 'home') {
+        if (segments[0] !== "home") {
           console.log("🚀 User found - redirecting to home");
-          router.replace('/home');
+          router.replace("/home");
         }
       }
-      
+
       setInitialRouteChecked(true);
     }
   }, [authLoading, user, segments, initialRouteChecked]);

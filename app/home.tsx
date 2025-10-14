@@ -12,9 +12,9 @@ import {
 } from "react-native";
 import BottomNav from "../components/BottomNav";
 import { auth } from "../config/firebase";
-import { signOut } from "../services/auth";
-import { getNearbyReports } from "../services/reports";
-import { getUserProfile, getUserStats } from "../services/userService";
+import { getUserProfile, signOut } from "../services/auth";
+import { getNearbyReports } from "@/services/reports";
+import { getUserStats } from "@/services/userService";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -50,38 +50,30 @@ export default function HomeScreen() {
 
       console.log("Loading data for user:", user.uid);
 
-      // Load all data safely
+      // TEMPORARILY COMMENT OUT SERVICE CALLS
       const stats = await getUserStats(user.uid);
       setUserStats(stats);
 
-      try {
-        const profile = await getUserProfile(user.uid);
-        setUserProfile(profile);
-      } catch (e) {
-        console.log("No user profile found");
-      }
+      setUserStats({
+        totalReports: 0,
+        pendingReports: 0,
+        inProgressReports: 0,
+        resolvedReports: 0,
+      });
 
-      try {
-        const nearby = await getNearbyReports();
-        setRecentReports(nearby || []);
-      } catch (e) {
-        console.log("No reports found");
-        setRecentReports([]);
-      }
+      const profile = await getUserProfile(user.uid);
+      setUserProfile(profile);
+      setUserProfile(null);
+
+      const nearby = await getNearbyReports();
+      setRecentReports(nearby || []);
+      setRecentReports([]);
     } catch (error) {
       console.error("Error loading home data:", error);
     } finally {
       setLoading(false);
     }
   };
-
-  const handleQuickReport = (category: string) => {
-    Alert.alert(
-      "Coming Soon",
-      `Submit ${category} report feature coming soon!`
-    );
-  };
-
   const handleReportPress = (reportId: string) => {
     Alert.alert("Report Details", `Viewing report ${reportId}`);
   };
@@ -97,6 +89,13 @@ export default function HomeScreen() {
       Alert.alert("Error", "Failed to sign out");
     }
   };
+
+  const handleQuickReport = (category: string) => {
+  Alert.alert(
+    "Coming Soon",
+    `Submit ${category} report feature coming soon!`
+  );
+};
 
   // SAFE data access - won't crash if data is missing
   const getDisplayName = () => {
@@ -153,9 +152,10 @@ export default function HomeScreen() {
     );
   }
 
+
+  // Main Content
   return (
     <View style={styles.container}>
-      // Update your ScrollView
       <ScrollView
         style={styles.content}
         refreshControl={
@@ -299,11 +299,12 @@ export default function HomeScreen() {
           </View>
         </View>
       </ScrollView>
-      <BottomNav />
+      <BottomNav /> 
     </View>
   );
 }
 
+// STYLES
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,

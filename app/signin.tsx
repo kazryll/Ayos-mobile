@@ -38,6 +38,7 @@ export default function SignInScreen() {
     setLoading(false);
   };
 
+  /*----------------------------------------------------- Render Function --------------------------------------------------------- */
   return (
     <View style={styles.container}>
       {/* Logo */}
@@ -48,7 +49,7 @@ export default function SignInScreen() {
       />
 
       {/* Title */}
-      <Text style={styles.title}>Login to MY MWEHEHHE account</Text>
+      <Text style={styles.title}>Login to your account</Text>
 
       {/* Email Input */}
       <TextInput
@@ -95,6 +96,7 @@ export default function SignInScreen() {
   );
 }
 
+/*----------------------------------------------------- Styles --------------------------------------------------------- */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -105,7 +107,7 @@ const styles = StyleSheet.create({
   },
   logo: {
     width: 100,
-    height: 100,
+    height: 80,
     marginBottom: 30,
   },
   title: {

@@ -58,6 +58,7 @@ export default function SignupScreen() {
     setLoading(false);
   };
 
+  /*----------------------------------------------------- Render Function --------------------------------------------------------- */
   return (
     <View style={styles.container}>
       {/* Logo */}
@@ -137,6 +138,7 @@ export default function SignupScreen() {
   );
 }
 
+/*----------------------------------------------------- Styles --------------------------------------------------------- */
 const styles = StyleSheet.create({
   container: {
     flex: 1,

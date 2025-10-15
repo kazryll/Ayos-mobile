@@ -1,3 +1,4 @@
+// screens/HomeScreen.tsx
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -12,7 +13,7 @@ import {
 } from "react-native";
 import BottomNav from "../components/BottomNav";
 import { auth } from "../config/firebase";
-import { getUserProfile, signOut } from "../services/auth";
+import { getUserProfile } from "../services/auth";
 import { getNearbyReports } from "@/services/reports";
 import { getUserStats } from "@/services/userService";
 
@@ -74,6 +75,7 @@ export default function HomeScreen() {
       setLoading(false);
     }
   };
+
   const handleReportPress = (reportId: string) => {
     Alert.alert("Report Details", `Viewing report ${reportId}`);
   };
@@ -81,21 +83,6 @@ export default function HomeScreen() {
   const handleSeeAllMap = () => {
     Alert.alert("Coming Soon", "Full map view will be available soon!");
   };
-
-  const handleLogout = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      Alert.alert("Error", "Failed to sign out");
-    }
-  };
-
-  const handleQuickReport = (category: string) => {
-  Alert.alert(
-    "Coming Soon",
-    `Submit ${category} report feature coming soon!`
-  );
-};
 
   // SAFE data access - won't crash if data is missing
   const getDisplayName = () => {
@@ -152,7 +139,6 @@ export default function HomeScreen() {
     );
   }
 
-
   // Main Content
   return (
     <View style={styles.container}>
@@ -167,14 +153,11 @@ export default function HomeScreen() {
           />
         }
       >
-        {/* Header */}
+        {/* Header - REMOVED LOGOUT BUTTON */}
         <View style={styles.header}>
           <Text style={styles.greeting}>Good Morning, {getDisplayName()}!</Text>
 
-          <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-            <Text style={styles.logoutText}>Logout</Text>
-          </TouchableOpacity>
-
+          {/* Stats Container */}
           <View style={styles.statsContainer}>
             <View style={styles.statCard}>
               <Text style={styles.statNumber}>{userStats.totalReports}</Text>
@@ -197,7 +180,6 @@ export default function HomeScreen() {
                 <TouchableOpacity
                   key={category}
                   style={styles.categoryButton}
-                  onPress={() => handleQuickReport(category)}
                 >
                   <Text style={styles.categoryText}>{category}</Text>
                 </TouchableOpacity>
@@ -304,7 +286,7 @@ export default function HomeScreen() {
   );
 }
 
-// STYLES
+// STYLES - Updated to remove logout button styles
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
@@ -326,27 +308,13 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: "#2c3e50",
     padding: 20,
-    paddingTop: 50,
+    paddingTop: 50, // Keep padding for status bar
   },
   greeting: {
     fontSize: 24,
     fontWeight: "bold",
     color: "white",
     marginBottom: 20,
-  },
-  logoutButton: {
-    position: "absolute",
-    top: 50,
-    right: 20,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 15,
-  },
-  logoutText: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "bold",
   },
   statsContainer: {
     flexDirection: "row",

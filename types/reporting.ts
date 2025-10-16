@@ -29,11 +29,18 @@ export interface ReportData {
   description: string;
   aiAnalysis: AIAnalysis | null;
   timestamp: string;
-  
+   location?: {
+    latitude: number;
+    longitude: number;
+    address: string;
+    manualPin?: boolean;
+  };
+  images?: string[]; // Base64 or URLs
 }
 
 export enum WizardStep {
-  DESCRIBE_ISSUE = 1,
-  REVIEW_ANALYSIS = 2,
-  SUBMISSION_SUCCESS = 3
+   DESCRIBE_ISSUE = 1,
+  ADD_LOCATION = 2,
+  REVIEW_SUBMIT = 3,
+  SUBMISSION_SUCCESS = 4
 }

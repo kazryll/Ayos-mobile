@@ -1,4 +1,12 @@
-import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
+import { 
+  collection, 
+  getDocs, 
+  orderBy, 
+  query, 
+  where, 
+  addDoc, 
+  serverTimestamp 
+} from "firebase/firestore";
 import { db } from "../config/firebase";
 
 export const getUserReports = async (userId) => {
@@ -29,9 +37,37 @@ export const getUserReports = async (userId) => {
   }
 };
 
+// FIXED: Added userId and userEmail as parameters
+export const submitReport = async (reportData, userId = null, userEmail = null) => {
+  try {
+    const reportWithMetadata = {
+      ...reportData,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      status: "submitted",
+      // Only include user data if provided (for anonymous submissions)
+      ...(userId && { reportedBy: userId }),
+      ...(userEmail && { userEmail: userEmail }),
+    };
+
+    const docRef = await addDoc(
+      collection(db, "reports"),
+      reportWithMetadata
+    );
+    console.log("✅ Report submitted with ID: ", docRef.id);
+    return docRef.id;
+  } catch (error) {
+    console.error("❌ Error submitting report: ", error);
+    throw new Error("Failed to submit report to database");
+  }
+};
+
 export const getNearbyReports = async () => {
   try {
-    const q = query(collection(db, "reports"), orderBy("createdAt", "desc"));
+    const q = query(
+      collection(db, "reports"),
+      orderBy("createdAt", "desc")
+    );
 
     const querySnapshot = await getDocs(q);
     const reports = [];

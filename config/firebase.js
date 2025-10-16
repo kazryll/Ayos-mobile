@@ -5,7 +5,7 @@ import { getFirestore } from "firebase/firestore";
 
 // Web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyCu5_1gAaAk1lruTlzdKu3cCN2pTHwdJKc",
+  apiKey: "AIzaSyBRV1JEt_qSWZPxpvouEUNzuPbW5gWW4yc",
   authDomain: "ayos-lgu-web-app.firebaseapp.com",
   projectId: "ayos-lgu-web-app",
   storageBucket: "ayos-lgu-web-app.firebasestorage.app",

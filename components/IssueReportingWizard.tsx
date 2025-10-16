@@ -1,5 +1,10 @@
 // components/IssueReportingWizard.tsx
-import React, { JSX, useState } from "react";
+
+import React, { JSX, useState, useEffect } from "react";
+import LocationPinner from "./LocationPinner";
+import { auth } from "../config/firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import ImageUploader from "./ImageUploader";
 import {
   ActivityIndicator,
   Alert,
@@ -12,6 +17,7 @@ import {
   View,
 } from "react-native";
 import { analyzeIssueWithAI } from "../services/groqServices";
+import { submitReport } from "../services/reports";
 import {
   IssueCategory,
   AIAnalysis,
@@ -19,9 +25,8 @@ import {
   ReportData,
   WizardStep,
 } from "../types/reporting";
+import ReviewSubmitStep from "./ReviewSubmitStep";
 
-
-// Add this prop interface
 interface IssueReportingWizardProps {
   onClose: () => void;
 }
@@ -36,38 +41,82 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
   const [aiAnalysis, setAiAnalysis] = useState<AIAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [showAIModal, setShowAIModal] = useState<boolean>(false);
+  const [reportLocation, setReportLocation] = useState<
+    ReportData["location"] | null
+  >(null);
+  const [reportImages, setReportImages] = useState<string[]>([]);
+
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      console.log("👤 Auth state changed:", user?.email);
+    });
+
+    return () => unsubscribe(); // Cleanup on unmount
+  }, []);
 
   const handleAnalyzeWithAI = async (): Promise<void> => {
-  if (!userDescription.trim()) {
-    Alert.alert('Error', 'Please describe the issue first.');
-    return;
-  }
+    if (!userDescription.trim()) {
+      Alert.alert("Error", "Please describe the issue first.");
+      return;
+    }
 
-  setIsAnalyzing(true);
-  setShowAIModal(true);
+    setIsAnalyzing(true);
+    setShowAIModal(true);
 
-  try {
-    console.log('📝 Sending description:', userDescription); // ← ADD THIS
-    const analysis = await analyzeIssueWithAI(userDescription);
-    setAiAnalysis(analysis);
-    setCurrentStep(WizardStep.REVIEW_ANALYSIS);
-    setShowAIModal(false); // ← ADD THIS to close modal after success
-  } catch (error) {
-    Alert.alert('Analysis Failed', error instanceof Error ? error.message : 'Unknown error occurred');
-  } finally {
-    setIsAnalyzing(false);
-  }
-};
+    try {
+      const analysis = await analyzeIssueWithAI(userDescription);
+      setAiAnalysis(analysis);
+      setCurrentStep(WizardStep.ADD_LOCATION); // ← CHANGE THIS LINE
+      setShowAIModal(false);
+    } catch (error) {
+      Alert.alert(
+        "Analysis Failed",
+        error instanceof Error ? error.message : "Unknown error occurred"
+      );
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
-  const handleConfirm = (): void => {
-    const reportData: ReportData = {
-      description: userDescription,
-      aiAnalysis: aiAnalysis,
-      timestamp: new Date().toISOString(),
-    };
+  const handleConfirm = async (
+    images: string[] = [],
+    submittedAnonymously: boolean = false
+  ) => {
+    setIsSubmitting(true);
 
-    console.log("Submitting report:", reportData);
-    setCurrentStep(WizardStep.SUBMISSION_SUCCESS);
+    try {
+      const reportData = {
+        description: userDescription,
+        aiAnalysis: aiAnalysis,
+        location: reportLocation || null, // ← CHANGE TO null
+        images: images.length > 0 ? images : null, // ← CHANGE TO null
+        submittedAnonymously: submittedAnonymously,
+        department: aiAnalysis
+          ? getAssignedDepartment(aiAnalysis.category)
+          : "General",
+        status: "submitted",
+      };
+
+      console.log("📤 Submitting report...");
+
+      const reportId = await submitReport(
+        reportData,
+        currentUser?.uid,
+        currentUser?.email
+      );
+
+      console.log("✅ Report submitted successfully with ID:", reportId);
+      setCurrentStep(WizardStep.SUBMISSION_SUCCESS);
+    } catch (error) {
+      console.error("❌ Submission failed:", error);
+      Alert.alert("Submission Failed", "Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCancel = (): void => {
@@ -110,26 +159,30 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
   };
 
   // Add these two functions AFTER getPriorityText
-const getAssignedDepartment = (category: IssueCategory): string => {
-  const departmentMap = {
-    [IssueCategory.INFRASTRUCTURE]: 'DPWH - Roads Division',
-    [IssueCategory.UTILITIES]: 'Baguio City Utilities',
-    [IssueCategory.ENVIRONMENT]: 'City Environment Office',
-    [IssueCategory.PUBLIC_SAFETY]: 'Public Safety Division',
-    [IssueCategory.SOCIAL_SERVICES]: 'Social Welfare Department',
-    [IssueCategory.OTHER]: 'General Services Office'
+  const getAssignedDepartment = (category: IssueCategory): string => {
+    const departmentMap = {
+      [IssueCategory.INFRASTRUCTURE]: "DPWH - Roads Division",
+      [IssueCategory.UTILITIES]: "Baguio City Utilities",
+      [IssueCategory.ENVIRONMENT]: "City Environment Office",
+      [IssueCategory.PUBLIC_SAFETY]: "Public Safety Division",
+      [IssueCategory.SOCIAL_SERVICES]: "Social Welfare Department",
+      [IssueCategory.OTHER]: "General Services Office",
+    };
+    return departmentMap[category] || "Appropriate Department";
   };
-  return departmentMap[category] || 'Appropriate Department';
-};
 
-const getUrgencyAssessment = (priority: IssuePriority): string => {
-  switch (priority) {
-    case IssuePriority.HIGH: return 'Requires immediate attention';
-    case IssuePriority.MEDIUM: return 'Should be addressed within days';
-    case IssuePriority.LOW: return 'Can be scheduled for regular maintenance';
-    default: return 'Needs assessment';
-  }
-};
+  const getUrgencyAssessment = (priority: IssuePriority): string => {
+    switch (priority) {
+      case IssuePriority.HIGH:
+        return "Requires immediate attention";
+      case IssuePriority.MEDIUM:
+        return "Should be addressed within days";
+      case IssuePriority.LOW:
+        return "Can be scheduled for regular maintenance";
+      default:
+        return "Needs assessment";
+    }
+  };
 
   const renderStepContent = (): JSX.Element => {
     switch (currentStep) {
@@ -174,105 +227,34 @@ const getUrgencyAssessment = (priority: IssuePriority): string => {
             </TouchableOpacity>
           </View>
         );
+      case WizardStep.ADD_LOCATION:
+        return (
+          <LocationPinner
+            onLocationConfirm={(location) => {
+              console.log("📍 Location confirmed:", location);
+              setReportLocation(location);
+              setCurrentStep(WizardStep.REVIEW_SUBMIT);
+            }}
+            onBack={() => {
+              console.log("📍 Going back to describe issue");
+              setCurrentStep(WizardStep.DESCRIBE_ISSUE);
+            }}
+          />
+        );
 
-      case WizardStep.REVIEW_ANALYSIS:
-        
-  return (
-    <View style={styles.stepContainer}>
-      <Text style={styles.stepTitle}>AI Analysis Complete</Text>
-      
-      {aiAnalysis && (
-        <View style={styles.analysisContainer}>
-          {/* Confidence Badge */}
-          <View style={styles.confidenceBadge}>
-            <Text style={styles.confidenceText}>85% confident</Text>
-          </View>
-
-          {/* Analysis Cards */}
-          <View style={styles.analysisGrid}>
-            <View style={styles.analysisCard}>
-              <Text style={styles.analysisCardLabel}>Category</Text>
-              <Text style={styles.analysisCardValue}>{aiAnalysis.category}</Text>
-            </View>
-            
-            <View style={styles.analysisCard}>
-              <Text style={styles.analysisCardLabel}>Priority</Text>
-              <Text style={[
-                styles.analysisCardValue,
-                { color: getPriorityColor(aiAnalysis.priority) }
-              ]}>
-                {getPriorityText(aiAnalysis.priority)}
-              </Text>
-            </View>
-          </View>
-
-          {/* Generated Title - FROM AI */}
-          <View style={styles.detailCard}>
-            <Text style={styles.detailLabel}>Generated Title</Text>
-            <Text style={styles.detailValue}>
-              {aiAnalysis.subcategory} {aiAnalysis.location ? `in ${aiAnalysis.location}` : 'Report'}
-            </Text>
-          </View>
-
-          {/* Assigned Department - DYNAMIC */}
-          <View style={styles.detailCard}>
-            <Text style={styles.detailLabel}>Assigned Department</Text>
-            <Text style={styles.detailValue}>
-              {getAssignedDepartment(aiAnalysis.category)}
-            </Text>
-          </View>
-
-          {/* Urgency Assessment - FROM AI */}
-          <View style={styles.detailCard}>
-            <Text style={styles.detailLabel}>Urgency Assessment</Text>
-            <Text style={styles.detailValue}>
-              {aiAnalysis.urgency_assessment || getUrgencyAssessment(aiAnalysis.priority)}
-            </Text>
-          </View>
-
-          {/* Keywords Extracted - FROM AI */}
-          <View style={styles.detailCard}>
-            <Text style={styles.detailLabel}>Keywords Extracted</Text>
-            <View style={styles.keywordsContainer}>
-              {aiAnalysis.keywords && aiAnalysis.keywords.length > 0 ? (
-                aiAnalysis.keywords.map((keyword, index) => (
-                  <View key={index} style={styles.keywordTag}>
-                    <Text style={styles.keywordText}>{keyword}</Text>
-                  </View>
-                ))
-              ) : (
-                <Text style={styles.detailValue}>No keywords extracted</Text>
-              )}
-            </View>
-          </View>
-
-          {/* Footer Note */}
-          <View style={styles.footerNote}>
-            <Text style={styles.footerNoteText}>
-              This structured data will be sent to the LGU
-            </Text>
-          </View>
-        </View>
-      )}
-
-      {/* Action Buttons */}
-      <View style={styles.actionButtons}>
-        <TouchableOpacity
-          style={[styles.button, styles.secondaryButton]}
-          onPress={() => setCurrentStep(WizardStep.DESCRIBE_ISSUE)}
-        >
-          <Text style={styles.secondaryButtonText}>View Details</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity
-          style={[styles.button, styles.primaryButton]}
-          onPress={handleConfirm}
-        >
-          <Text style={styles.primaryButtonText}>Continue</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+      case WizardStep.REVIEW_SUBMIT:
+        return (
+          <ReviewSubmitStep
+            userDescription={userDescription}
+            aiAnalysis={aiAnalysis}
+            reportLocation={reportLocation}
+            onBack={() => setCurrentStep(WizardStep.ADD_LOCATION)}
+            onSubmit={(images) => {
+              setReportImages(images);
+              handleConfirm(images);
+            }}
+          />
+        );
 
       case WizardStep.SUBMISSION_SUCCESS:
         return (
@@ -288,14 +270,23 @@ const getUrgencyAssessment = (priority: IssuePriority): string => {
                 reports section.
               </Text>
 
-              <TouchableOpacity
-                style={styles.successButton}
-                onPress={resetWizard}
-              >
-                <Text style={styles.successButtonText}>
-                  Report Another Issue
-                </Text>
-              </TouchableOpacity>
+              <View style={styles.successButtonContainer}>
+                <TouchableOpacity
+                  style={[styles.successButton, styles.backToHomeButton]}
+                  onPress={onClose} // This will close the wizard and go back to home
+                >
+                  <Text style={styles.successButtonText}>Back to Home</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.successButton, styles.reportAnotherButton]}
+                  onPress={resetWizard}
+                >
+                  <Text style={styles.reportAnotherButtonText}>
+                    Report Another Issue
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         );
@@ -306,30 +297,38 @@ const getUrgencyAssessment = (priority: IssuePriority): string => {
   };
 
   // Updated header with close button
-  const renderHeader = () => (
-    <View style={styles.header}>
-      <View style={styles.headerRow}>
-        <Text style={styles.title}>AI-Powered Reporting</Text>
-        <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-          <Text style={styles.closeButtonText}>×</Text>
-        </TouchableOpacity>
-      </View>
-      <View style={styles.progressContainer}>
-        <Text style={styles.progressText}>Step {currentStep} of 3</Text>
-        <View style={styles.progressBar}>
-          <View
-            style={[
-              styles.progressFill,
-              { width: `${(currentStep / 3) * 100}%` },
-            ]}
-          />
+  // Update your renderHeader function
+  const renderHeader = () => {
+    // Don't show header on success step
+    if (currentStep === WizardStep.SUBMISSION_SUCCESS) {
+      return null;
+    }
+
+    return (
+      <View style={styles.header}>
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>AI-Powered Reporting</Text>
+          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <Text style={styles.closeButtonText}>×</Text>
+          </TouchableOpacity>
         </View>
-        <Text style={styles.progressPercentage}>
-          {Math.round((currentStep / 3) * 100)}% Complete
-        </Text>
+        <View style={styles.progressContainer}>
+          <Text style={styles.progressText}>Step {currentStep} of 3</Text>
+          <View style={styles.progressBar}>
+            <View
+              style={[
+                styles.progressFill,
+                { width: `${(currentStep / 3) * 100}%` },
+              ]}
+            />
+          </View>
+          <Text style={styles.progressPercentage}>
+            {Math.round((currentStep / 3) * 100)}% Complete
+          </Text>
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -586,17 +585,6 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginBottom: 24,
   },
-  successButton: {
-    backgroundColor: "#007AFF",
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  successButtonText: {
-    color: "#fff",
-    fontSize: 17,
-    fontWeight: "600",
-  },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -654,6 +642,34 @@ const styles = StyleSheet.create({
     color: "#1C1C1E",
     fontSize: 16,
     fontWeight: "600",
+  },
+  successButtonContainer: {
+    flexDirection: "row",
+    gap: 12,
+    width: "100%",
+    marginTop: 16,
+  },
+  successButton: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  backToHomeButton: {
+    backgroundColor: "#E5E5EA",
+  },
+  reportAnotherButton: {
+    backgroundColor: "#007AFF",
+  },
+  successButtonText: {
+    color: "#1C1C1E",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  reportAnotherButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 16,
   },
   confirmButtonText: {
     color: "#fff",

@@ -1,8 +1,9 @@
 // services/geminiService.ts
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GEMINI_API_KEY } from '@env';
 import { AIAnalysis, IssueCategory, IssuePriority } from '../types/reporting';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'AIzaSyCppYlivAYheRY_dFvf-Nj1BA2YdmjSwQQ');
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 export const analyzeIssueWithAI = async (userDescription: string): Promise<AIAnalysis> => {
   try {

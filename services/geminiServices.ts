@@ -1,13 +1,15 @@
 // services/geminiService.ts
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { GEMINI_API_KEY } from '@env';
-import { AIAnalysis, IssueCategory, IssuePriority } from '../types/reporting';
+import { GEMINI_API_KEY } from "@env";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { AIAnalysis, IssueCategory, IssuePriority } from "../types/reporting";
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
-export const analyzeIssueWithAI = async (userDescription: string): Promise<AIAnalysis> => {
+export const analyzeIssueWithAI = async (
+  userDescription: string
+): Promise<AIAnalysis> => {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
     const prompt = `
       Analyze the following community issue report and categorize it. Return a JSON response with this exact structure:
@@ -36,41 +38,40 @@ export const analyzeIssueWithAI = async (userDescription: string): Promise<AIAna
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
-    
+
     // Extract JSON from the response
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const rawAnalysis = JSON.parse(jsonMatch[0]);
-      
+
       // Map to our proper types
       return {
         category: mapToIssueCategory(rawAnalysis.category),
-        subcategory: rawAnalysis.subcategory || 'General',
-        summary: rawAnalysis.summary || 'No summary provided',
+        subcategory: rawAnalysis.subcategory || "General",
+        summary: rawAnalysis.summary || "No summary provided",
         priority: mapToIssuePriority(rawAnalysis.priority),
-        suggested_actions: rawAnalysis.suggested_actions || []
+        suggested_actions: rawAnalysis.suggested_actions || [],
       };
     }
-    
-    throw new Error('Invalid response format from AI');
-    
+
+    throw new Error("Invalid response format from AI");
   } catch (error) {
-    console.error('AI Analysis Error:', error);
-    throw new Error('Failed to analyze issue with AI. Please try again.');
+    console.error("AI Analysis Error:", error);
+    throw new Error("Failed to analyze issue with AI. Please try again.");
   }
 };
 
 // Helper function to map string to IssueCategory enum
 const mapToIssueCategory = (category: string): IssueCategory => {
   const categoryMap: { [key: string]: IssueCategory } = {
-    'infrastructure': IssueCategory.INFRASTRUCTURE,
-    'utilities': IssueCategory.UTILITIES,
-    'environment': IssueCategory.ENVIRONMENT,
-    'public safety': IssueCategory.PUBLIC_SAFETY,
-    'social services': IssueCategory.SOCIAL_SERVICES,
-    'other': IssueCategory.OTHER
+    infrastructure: IssueCategory.INFRASTRUCTURE,
+    utilities: IssueCategory.UTILITIES,
+    environment: IssueCategory.ENVIRONMENT,
+    "public safety": IssueCategory.PUBLIC_SAFETY,
+    "social services": IssueCategory.SOCIAL_SERVICES,
+    other: IssueCategory.OTHER,
   };
-  
+
   const normalizedCategory = category.toLowerCase();
   return categoryMap[normalizedCategory] || IssueCategory.OTHER;
 };
@@ -78,11 +79,11 @@ const mapToIssueCategory = (category: string): IssueCategory => {
 // Helper function to map string to IssuePriority enum
 const mapToIssuePriority = (priority: string): IssuePriority => {
   const priorityMap: { [key: string]: IssuePriority } = {
-    'low': IssuePriority.LOW,
-    'medium': IssuePriority.MEDIUM,
-    'high': IssuePriority.HIGH
+    low: IssuePriority.LOW,
+    medium: IssuePriority.MEDIUM,
+    high: IssuePriority.HIGH,
   };
-  
+
   const normalizedPriority = priority.toLowerCase();
   return priorityMap[normalizedPriority] || IssuePriority.MEDIUM;
 };

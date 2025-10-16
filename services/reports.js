@@ -5,9 +5,33 @@ import {
   query, 
   where, 
   addDoc, 
-  serverTimestamp 
+  serverTimestamp,
+  updateDoc // ADD THIS
 } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage"; // ADD THIS
 import { db } from "../config/firebase";
+
+// INITIALIZE STORAGE
+const storage = getStorage();
+
+// ADD THIS FUCKING FUNCTION RIGHT HERE:
+const uploadImageToStorage = async (imageUri, reportId, index) => {
+  try {
+    const response = await fetch(imageUri);
+    const blob = await response.blob();
+    
+    const storageRef = ref(storage, `reports/${reportId}/images/image_${index}_${Date.now()}.jpg`);
+    
+    const snapshot = await uploadBytes(storageRef, blob);
+    const downloadURL = await getDownloadURL(snapshot.ref);
+    
+    console.log(`✅ Image ${index} uploaded to: reports/${reportId}/images/`);
+    return downloadURL;
+  } catch (error) {
+    console.error(`❌ Error uploading image ${index}:`, error);
+    throw error;
+  }
+};
 
 export const getUserReports = async (userId) => {
   try {
@@ -37,25 +61,55 @@ export const getUserReports = async (userId) => {
   }
 };
 
-// FIXED: Added userId and userEmail as parameters
+// MODIFY THIS FUCKING FUNCTION:
 export const submitReport = async (reportData, userId = null, userEmail = null) => {
   try {
-    const reportWithMetadata = {
-      ...reportData,
+    const { images, ...otherData } = reportData;
+    
+    // First create the report document to get an ID
+    const baseReportData = {
+      ...otherData,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       status: "submitted",
-      // Only include user data if provided (for anonymous submissions)
       ...(userId && { reportedBy: userId }),
       ...(userEmail && { userEmail: userEmail }),
     };
 
-    const docRef = await addDoc(
-      collection(db, "reports"),
-      reportWithMetadata
-    );
-    console.log("✅ Report submitted with ID: ", docRef.id);
+    const docRef = await addDoc(collection(db, "reports"), baseReportData);
+    console.log("📄 Report document created with ID: ", docRef.id);
+    
+    let imageUrls = [];
+    
+    // Upload images if they exist
+    if (images && images.length > 0) {
+      console.log(`📤 Uploading ${images.length} images to Storage...`);
+      
+      const uploadPromises = images.map((imageUri, index) => 
+        uploadImageToStorage(imageUri, docRef.id, index)
+      );
+      
+      imageUrls = await Promise.all(uploadPromises);
+      console.log("✅ All images uploaded to Storage");
+      
+      // Update the report with image URLs
+      await updateDoc(docRef, {
+        images: imageUrls,
+        hasImages: true,
+        imageCount: imageUrls.length
+      });
+    } else {
+      // Update with empty images array
+      await updateDoc(docRef, {
+        images: [],
+        hasImages: false,
+        imageCount: 0
+      });
+    }
+    
+    console.log("✅ Report submitted successfully with ID: ", docRef.id);
     return docRef.id;
+    
   } catch (error) {
     console.error("❌ Error submitting report: ", error);
     throw new Error("Failed to submit report to database");

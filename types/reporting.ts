@@ -20,12 +20,16 @@ export interface AIAnalysis {
   summary: string;
   priority: IssuePriority;
   suggested_actions: string[];
+  keywords: string[];        
+  location: string;            
+  urgency_assessment: string; 
 }
 
 export interface ReportData {
   description: string;
   aiAnalysis: AIAnalysis | null;
   timestamp: string;
+  
 }
 
 export enum WizardStep {

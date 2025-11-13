@@ -1,6 +1,8 @@
 import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
 import * as Location from "expo-location";
 import React, { useEffect, useRef, useState } from "react";
+import { LinearGradient } from 'expo-linear-gradient';
+import theme from '../config/theme';
 import {
   ActivityIndicator,
   Alert,
@@ -350,15 +352,22 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({
     return (
       <View style={styles.container}>
         <View style={styles.content}>
-          <Text style={styles.title}>Confirm Location</Text>
-          <Text style={styles.subtitle}>
-            We need the exact location to route this to the correct local
-            office.
-          </Text>
+          <LinearGradient
+            colors={[theme.Colors.primaryDark, theme.Colors.primaryLight]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.headerGradient}
+          >
+            <Text style={[styles.title, styles.titleOnGradient]}>Confirm Location</Text>
+            <Text style={[styles.subtitle, styles.subtitleOnGradient]}>
+              We need the exact location to route this to the correct local
+              office.
+            </Text>
+          </LinearGradient>
 
           <ActivityIndicator
             size="large"
-            color="#007AFF"
+            color={theme.Colors.primary}
             style={styles.loader}
           />
           <Text style={styles.loadingText}>Getting your location...</Text>
@@ -369,12 +378,19 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({
 
   return (
     <ScrollView style={styles.container}>
-      {/* Main Content */}
+        {/* Main Content */}
       <View style={styles.content}>
-        <Text style={styles.title}>Confirm Location</Text>
-        <Text style={styles.subtitle}>
-          We need the exact location to route this to the correct local office.
-        </Text>
+        <LinearGradient
+          colors={[theme.Colors.primaryDark, theme.Colors.primaryLight]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.headerGradient}
+        >
+          <Text style={[styles.title, styles.titleOnGradient]}>Confirm Location</Text>
+          <Text style={[styles.subtitle, styles.subtitleOnGradient]}>
+            We need the exact location to route this to the correct local office.
+          </Text>
+        </LinearGradient>
 
         {error ? (
           <View style={styles.errorContainer}>
@@ -541,18 +557,18 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: 4,
-    backgroundColor: "#E5E5EA",
+    backgroundColor: theme.Colors.divider,
     borderRadius: 2,
     marginBottom: 8,
   },
   progressFill: {
     height: "100%",
-    backgroundColor: "#007AFF",
+    backgroundColor: theme.Colors.primary,
     borderRadius: 2,
   },
   progressText: {
     fontSize: 14,
-    color: "#666",
+    color: theme.Colors.muted,
     textAlign: "center",
   },
   content: {
@@ -581,14 +597,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     padding: 16,
-    backgroundColor: "#F8F8F8",
+    backgroundColor: theme.Colors.surface,
+    color: theme.Colors.text,
     textAlign: "center",
   },
   mapLoader: {
     height: 300,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#F8F8F8",
+    backgroundColor: theme.Colors.surface,
   },
   mapLoadingText: {
     marginTop: 12,
@@ -596,17 +613,17 @@ const styles = StyleSheet.create({
   },
   useCurrentLocationButton: {
     padding: 12,
-    backgroundColor: "#F0F8FF",
+    backgroundColor: theme.Colors.surface,
     alignItems: "center",
     borderTopWidth: 1,
-    borderTopColor: "#E5E5EA",
+    borderTopColor: theme.Colors.divider,
   },
   useCurrentLocationText: {
-    color: "#007AFF",
+    color: theme.Colors.primary,
     fontWeight: "600",
   },
   selectedLocationContainer: {
-    backgroundColor: "#F8F8F8",
+    backgroundColor: theme.Colors.surface,
     padding: 16,
     borderRadius: 12,
     marginBottom: 24,
@@ -615,17 +632,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     marginBottom: 8,
-    color: "#1C1C1E",
+    color: theme.Colors.text,
   },
   selectedLocationAddress: {
     fontSize: 16,
     fontWeight: "500",
     marginBottom: 4,
-    color: "#1C1C1E",
+    color: theme.Colors.text,
   },
   selectedLocationCity: {
     fontSize: 14,
-    color: "#666",
+    color: theme.Colors.muted,
     marginBottom: 8,
     fontStyle: "italic",
   },
@@ -653,10 +670,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   continueButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: theme.Colors.primary,
   },
   continueButtonText: {
-    color: "#fff",
+    color: theme.Colors.background,
     fontWeight: "600",
     fontSize: 16,
   },
@@ -667,10 +684,10 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   primaryButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: theme.Colors.primary,
   },
   primaryButtonText: {
-    color: "#fff",
+    color: theme.Colors.background,
     fontWeight: "600",
   },
   errorContainer: {
@@ -678,7 +695,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   errorText: {
-    color: "#FF3B30",
+    color: theme.Colors.danger,
     marginBottom: 20,
     textAlign: "center",
     lineHeight: 20,
@@ -710,14 +727,30 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 16,
   },
+  headerGradient: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  titleOnGradient: {
+    color: theme.Colors.background,
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  subtitleOnGradient: {
+    color: 'rgba(255,255,255,0.92)',
+    fontSize: 16,
+    marginBottom: 8,
+  },
   retryButton: {
     padding: 12,
-    backgroundColor: "#007AFF",
+    backgroundColor: theme.Colors.primary,
     borderRadius: 8,
     marginBottom: 16,
   },
   retryButtonText: {
-    color: "#fff",
+    color: theme.Colors.background,
     fontWeight: "600",
   },
   fallbackLocation: {

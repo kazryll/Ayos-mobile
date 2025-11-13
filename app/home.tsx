@@ -3,6 +3,7 @@ import { getNearbyReports } from "@/services/reports";
 import { getUserStats } from "@/services/userService";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   ActivityIndicator,
   Alert,
@@ -16,6 +17,7 @@ import {
 import BottomNav from "../components/BottomNav";
 import { auth } from "../config/firebase";
 import { getUserProfile } from "../services/auth";
+import theme from "../config/theme";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -190,8 +192,13 @@ export default function HomeScreen() {
           />
         }
       >
-        {/* Header - REMOVED LOGOUT BUTTON */}
-        <View style={styles.header}>
+        {/* Header - GRADIENT BACKGROUND */}
+        <LinearGradient
+          colors={[theme.Colors.primaryDark, theme.Colors.primaryLight]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.header}
+        >
           <Text style={styles.greeting}>Good Morning, {getDisplayName()}!</Text>
 
           {/* Stats Container */}
@@ -206,7 +213,7 @@ export default function HomeScreen() {
               <Text style={styles.statSubLabel}>Pending</Text>
             </View>
           </View>
-        </View>
+        </LinearGradient>
 
         {/* Quick Report Categories */}
         <View style={styles.section}>
@@ -362,7 +369,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    backgroundColor: "#2c3e50",
     padding: 20,
     paddingTop: 50, // Keep padding for status bar
   },

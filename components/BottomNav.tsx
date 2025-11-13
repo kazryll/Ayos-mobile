@@ -1,10 +1,11 @@
 // components/BottomNav.tsx - Fix the ImageIcon usage
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useState } from "react";
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Modal, StyleSheet, Text, TouchableOpacity, View, Platform } from "react-native";
 import { signOut } from "../services/auth";
 import ImageIcon from "./ImageIcon";
 import IssueReportingWizard from "./IssueReportingWizard";
+import theme from "../config/theme";
 
 const BottomNav = () => {
   console.log("🔵 BOTTOMNAV WITH NAVIGATION");
@@ -118,7 +119,7 @@ const BottomNav = () => {
           <ImageIcon
             name={item.icon as any}
             size={item.isCTA ? 26 : 22}
-            // REMOVED the color prop since ImageIcon doesn't support it
+            color={item.isCTA ? theme.Colors.background : (isActive(item.key) && theme.Colors.primary) || theme.Colors.muted}
           />
           {!item.isCTA && (
             <Text
@@ -230,19 +231,20 @@ const BottomNav = () => {
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    backgroundColor: "white",
+    backgroundColor: theme.Colors.surface,
     borderTopWidth: 1,
-    borderTopColor: "#ecf0f1",
-    paddingVertical: 8,
-    paddingHorizontal: 5,
+    borderTopColor: theme.Colors.divider,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    // subtle top shadow to lift navbar
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: -2,
+      height: -4,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 5,
+    shadowOpacity: Platform.OS === 'ios' ? 0.08 : 0.12,
+    shadowRadius: 6,
+    elevation: 10,
   },
   navItem: {
     flex: 1,
@@ -252,35 +254,35 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   activeNavItem: {
-    backgroundColor: "#e8f4fd",
+    backgroundColor: '#eef8f5',
   },
   ctaButton: {
-    backgroundColor: "#22c55e",
-    borderRadius: 50,
-    width: 60,
-    height: 60,
+    backgroundColor: theme.Colors.primary,
+    borderRadius: theme.Radii.round,
+    width: 68,
+    height: 68,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: -30,
+    marginTop: -34,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 6,
     },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-    borderWidth: 3,
-    borderColor: "white",
+    shadowOpacity: 0.28,
+    shadowRadius: 10,
+    elevation: 12,
+    borderWidth: 4,
+    borderColor: theme.Colors.background,
   },
   navLabel: {
-    fontSize: 12,
-    color: "#7f8c8d",
+    fontSize: theme.Typography.label,
+    color: theme.Colors.muted,
     fontWeight: "500",
     marginTop: 4,
   },
   activeNavLabel: {
-    color: "#3498db",
+    color: theme.Colors.primary,
     fontWeight: "600",
   },
   // Profile Menu Styles

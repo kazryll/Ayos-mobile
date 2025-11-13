@@ -2,6 +2,8 @@
 
 import { onAuthStateChanged } from "firebase/auth";
 import React, { JSX, useEffect, useState } from "react";
+import { LinearGradient } from 'expo-linear-gradient';
+import theme from '../config/theme';
 import {
   ActivityIndicator,
   Alert,
@@ -329,7 +331,12 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
     }
 
     return (
-      <View style={styles.header}>
+      <LinearGradient
+        colors={[theme.Colors.primaryDark, theme.Colors.primaryLight]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.header}
+      >
         <View style={styles.headerRow}>
           <Text style={styles.title}>AI-Powered Reporting</Text>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
@@ -350,7 +357,7 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
             {Math.round((currentStep / 3) * 100)}% Complete
           </Text>
         </View>
-      </View>
+      </LinearGradient>
     );
   };
 
@@ -412,8 +419,7 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E5EA",
+    paddingTop: 28,
   },
   headerRow: {
     flexDirection: "row",
@@ -424,21 +430,21 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#1C1C1E",
+    color: theme.Colors.background,
     flex: 1,
   },
   closeButton: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "#E5E5EA",
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(255,255,255,0.16)',
     justifyContent: "center",
     alignItems: "center",
     marginLeft: 10,
   },
   closeButtonText: {
     fontSize: 20,
-    color: "#1C1C1E",
+    color: theme.Colors.background,
     fontWeight: "bold",
     lineHeight: 20,
   },
@@ -447,22 +453,22 @@ const styles = StyleSheet.create({
   },
   progressText: {
     fontSize: 14,
-    color: "#8E8E93",
+    color: 'rgba(255,255,255,0.9)',
     marginBottom: 8,
   },
   progressBar: {
     height: 4,
-    backgroundColor: "#E5E5EA",
+    backgroundColor: 'rgba(255,255,255,0.18)',
     borderRadius: 2,
     overflow: "hidden",
   },
   progressFill: {
     height: "100%",
-    backgroundColor: "#007AFF",
+    backgroundColor: theme.Colors.primary,
   },
   progressPercentage: {
     fontSize: 12,
-    color: "#8E8E93",
+    color: 'rgba(255,255,255,0.85)',
     marginTop: 8,
     textAlign: "right",
   },
@@ -508,7 +514,7 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
   ctaButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: theme.Colors.primary,
     padding: 16,
     borderRadius: 12,
     alignItems: "center",
@@ -534,7 +540,7 @@ const styles = StyleSheet.create({
   },
   analysisValue: {
     fontSize: 16,
-    color: "#007AFF",
+    color: theme.Colors.primary,
     fontWeight: "500",
   },
   priorityText: {
@@ -572,7 +578,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   primaryButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: theme.Colors.primary,
   },
   secondaryButton: {
     backgroundColor: "#E5E5EA",
@@ -660,7 +666,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#E5E5EA",
   },
   confirmButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: theme.Colors.primary,
   },
   cancelButtonText: {
     color: "#1C1C1E",
@@ -696,7 +702,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   confirmButtonText: {
-    color: "#fff",
+    color: theme.Colors.background,
     fontSize: 16,
     fontWeight: "600",
   },

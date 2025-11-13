@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
 import { View, Text, TouchableOpacity, Image, StyleSheet, ScrollView, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import theme from '../config/theme';
 
 interface ImageUploaderProps {
   onImagesConfirm: (images: string[]) => void;
@@ -37,8 +39,15 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImagesConfirm, onBack }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Add Photos (Optional)</Text>
-      <Text style={styles.subtitle}>Upload up to 5 photos for better context</Text>
+      <LinearGradient
+        colors={[theme.Colors.primaryDark, theme.Colors.primaryLight]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.headerGradient}
+      >
+        <Text style={[styles.title, styles.titleOnGradient]}>Add Photos (Optional)</Text>
+        <Text style={[styles.subtitle, styles.subtitleOnGradient]}>Upload up to 5 photos for better context</Text>
+      </LinearGradient>
 
       <ScrollView style={styles.imagesContainer}>
         <View style={styles.imagesGrid}>
@@ -90,6 +99,17 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
   },
+  headerGradient: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  titleOnGradient: {
+    color: theme.Colors.background,
+  },
+  subtitleOnGradient: {
+    color: 'rgba(255,255,255,0.92)',
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -122,7 +142,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -8,
     right: -8,
-    backgroundColor: '#FF3B30',
+    backgroundColor: theme.Colors.danger,
     width: 24,
     height: 24,
     borderRadius: 12,
@@ -138,21 +158,21 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderWidth: 2,
-    borderColor: '#007AFF',
+    borderColor: theme.Colors.primary,
     borderStyle: 'dashed',
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F0F8FF',
+    backgroundColor: theme.Colors.surface,
   },
   addButtonText: {
     fontSize: 24,
-    color: '#007AFF',
+    color: theme.Colors.primary,
     fontWeight: 'bold',
   },
   addButtonLabel: {
     marginTop: 4,
-    color: '#007AFF',
+    color: theme.Colors.primary,
     fontSize: 12,
   },
   buttonContainer: {
@@ -167,7 +187,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   primaryButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: theme.Colors.primary,
   },
   secondaryButton: {
     backgroundColor: '#E5E5EA',

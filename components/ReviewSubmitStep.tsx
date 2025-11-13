@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
   View,
   Text,
@@ -9,6 +10,7 @@ import {
   Switch,
   Alert
 } from 'react-native';
+import theme from '../config/theme';
 import * as ImagePicker from 'expo-image-picker';
 import { AIAnalysis } from '../types/reporting';
 
@@ -83,10 +85,17 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>Review & Submit</Text>
-      <Text style={styles.subtitle}>
-        Add optional photos and review your AI-structured report before submission
-      </Text>
+      <LinearGradient
+        colors={[theme.Colors.primaryDark, theme.Colors.primaryLight]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.headerGradient}
+      >
+        <Text style={[styles.title, styles.titleOnGradient]}>Review & Submit</Text>
+        <Text style={[styles.subtitle, styles.subtitleOnGradient]}>
+          Add optional photos and review your AI-structured report before submission
+        </Text>
+      </LinearGradient>
 
       {/* Supporting Photos Section */}
       <View style={styles.section}>
@@ -245,6 +254,17 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     backgroundColor: '#fff',
+  },
+  headerGradient: {
+    padding: 18,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  titleOnGradient: {
+    color: theme.Colors.background,
+  },
+  subtitleOnGradient: {
+    color: 'rgba(255,255,255,0.9)',
   },
   title: {
     fontSize: 24,
@@ -424,7 +444,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   submitButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: theme.Colors.primary,
   },
   submitButtonDisabled: {
     backgroundColor: '#C7C7CC',

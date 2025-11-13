@@ -1,10 +1,7 @@
 // components/IssueReportingWizard.tsx
 
-import React, { JSX, useState, useEffect } from "react";
-import LocationPinner from "./LocationPinner";
-import { auth } from "../config/firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import ImageUploader from "./ImageUploader";
+import React, { JSX, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -16,15 +13,17 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { auth } from "../config/firebase";
 import { analyzeIssueWithAI } from "../services/groqServices";
 import { submitReport } from "../services/reports";
 import {
-  IssueCategory,
   AIAnalysis,
+  IssueCategory,
   IssuePriority,
   ReportData,
   WizardStep,
 } from "../types/reporting";
+import LocationPinner from "./LocationPinner";
 import ReviewSubmitStep from "./ReviewSubmitStep";
 
 interface IssueReportingWizardProps {
@@ -90,23 +89,30 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
 
     try {
       const reportData = {
-        title: aiAnalysis?.summary || userDescription.substring(0, 50) || "Issue Report", // ADD TITLE
+        title:
+          aiAnalysis?.summary ||
+          userDescription.substring(0, 50) ||
+          "Issue Report", // ADD TITLE
         description: userDescription,
         category: aiAnalysis?.category || "other",
         subcategory: aiAnalysis?.subcategory || "",
         priority: aiAnalysis?.priority || "medium",
         keywords: aiAnalysis?.keywords || [],
         suggested_actions: aiAnalysis?.suggested_actions || [],
-        urgency_assessment: getUrgencyAssessment(aiAnalysis?.priority || IssuePriority.MEDIUM),
+        urgency_assessment: getUrgencyAssessment(
+          aiAnalysis?.priority || IssuePriority.MEDIUM
+        ),
         aiAnalysis: aiAnalysis,
-        location: reportLocation ? {
-          address: reportLocation.address,
-          latitude: reportLocation.latitude,
-          longitude: reportLocation.longitude,
-          city: reportLocation.city || "",
-          province: reportLocation.province || "",
-          country: "Philippines"
-        } : null,
+        location: reportLocation
+          ? {
+              address: reportLocation.address,
+              latitude: reportLocation.latitude,
+              longitude: reportLocation.longitude,
+              city: reportLocation.city || "",
+              province: reportLocation.province || "",
+              country: "Philippines",
+            }
+          : null,
         images: images.length > 0 ? images : null,
         submittedAnonymously: submittedAnonymously,
         department: aiAnalysis

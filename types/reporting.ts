@@ -1,17 +1,17 @@
 // types/reporting.ts
 export enum IssuePriority {
-  LOW = 'low',
-  MEDIUM = 'medium',
-  HIGH = 'high'
+  LOW = "low",
+  MEDIUM = "medium",
+  HIGH = "high",
 }
 
 export enum IssueCategory {
-  INFRASTRUCTURE = 'Infrastructure',
-  UTILITIES = 'Utilities',
-  ENVIRONMENT = 'Environment',
-  PUBLIC_SAFETY = 'Public Safety',
-  SOCIAL_SERVICES = 'Social Services',
-  OTHER = 'Other'
+  INFRASTRUCTURE = "Infrastructure",
+  UTILITIES = "Utilities",
+  ENVIRONMENT = "Environment",
+  PUBLIC_SAFETY = "Public Safety",
+  SOCIAL_SERVICES = "Social Services",
+  OTHER = "Other",
 }
 
 export interface AIAnalysis {
@@ -20,16 +20,16 @@ export interface AIAnalysis {
   summary: string;
   priority: IssuePriority;
   suggested_actions: string[];
-  keywords: string[];        
-  location: string;            
-  urgency_assessment: string; 
+  keywords: string[];
+  location: string;
+  urgency_assessment: string;
 }
 
 export interface ReportData {
   description: string;
   aiAnalysis: AIAnalysis | null;
   timestamp: string;
-   location?: {
+  location?: {
     latitude: number;
     longitude: number;
     address: string;
@@ -42,8 +42,8 @@ export interface ReportData {
 }
 
 export enum WizardStep {
-   DESCRIBE_ISSUE = 1,
+  DESCRIBE_ISSUE = 1,
   ADD_LOCATION = 2,
   REVIEW_SUBMIT = 3,
-  SUBMISSION_SUCCESS = 4
+  SUBMISSION_SUCCESS = 4,
 }

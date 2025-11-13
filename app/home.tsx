@@ -1,4 +1,6 @@
 // screens/HomeScreen.tsx
+import { getNearbyReports } from "@/services/reports";
+import { getUserStats } from "@/services/userService";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -14,8 +16,6 @@ import {
 import BottomNav from "../components/BottomNav";
 import { auth } from "../config/firebase";
 import { getUserProfile } from "../services/auth";
-import { getNearbyReports } from "@/services/reports";
-import { getUserStats } from "@/services/userService";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -80,7 +80,11 @@ export default function HomeScreen() {
       try {
         console.log("📍 Fetching nearby reports...");
         const nearby = await getNearbyReports();
-        console.log("✅ Nearby reports loaded:", nearby?.length || 0, "reports");
+        console.log(
+          "✅ Nearby reports loaded:",
+          nearby?.length || 0,
+          "reports"
+        );
         setRecentReports(nearby || []);
       } catch (error) {
         console.error("❌ Error loading nearby reports:", error);
@@ -210,10 +214,7 @@ export default function HomeScreen() {
           <View style={styles.categoryGrid}>
             {["Road", "Nature", "Veterinary", "Disturbance", "Others"].map(
               (category) => (
-                <TouchableOpacity
-                  key={category}
-                  style={styles.categoryButton}
-                >
+                <TouchableOpacity key={category} style={styles.categoryButton}>
                   <Text style={styles.categoryText}>{category}</Text>
                 </TouchableOpacity>
               )
@@ -253,7 +254,8 @@ export default function HomeScreen() {
               <Text style={styles.sectionTitle}>Issues Near You</Text>
               {recentReports.length > 0 && (
                 <Text style={styles.reportCount}>
-                  {recentReports.length} report{recentReports.length !== 1 ? 's' : ''} found
+                  {recentReports.length} report
+                  {recentReports.length !== 1 ? "s" : ""} found
                 </Text>
               )}
             </View>
@@ -275,7 +277,12 @@ export default function HomeScreen() {
                     <Text style={styles.reportTitle}>
                       {getReportTitle(report)}
                     </Text>
-                    <View style={[styles.categoryBadge, { backgroundColor: getCategoryColor(report) }]}>
+                    <View
+                      style={[
+                        styles.categoryBadge,
+                        { backgroundColor: getCategoryColor(report) },
+                      ]}
+                    >
                       <Text style={styles.categoryBadgeText}>
                         {getReportCategory(report)}
                       </Text>
@@ -330,7 +337,7 @@ export default function HomeScreen() {
           </View>
         </View>
       </ScrollView>
-      <BottomNav /> 
+      <BottomNav />
     </View>
   );
 }

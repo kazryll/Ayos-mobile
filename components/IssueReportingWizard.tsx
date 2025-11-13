@@ -2,10 +2,13 @@
 
 import { LinearGradient } from "expo-linear-gradient";
 import { onAuthStateChanged } from "firebase/auth";
-import React, { JSX, useEffect, useState } from "react";
+import React, { JSX, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
+  Easing,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -55,6 +58,32 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
 
     return () => unsubscribe(); // Cleanup on unmount
   }, []);
+
+  // animated success icon values
+  const iconScale = useRef(new Animated.Value(0.9)).current;
+  const iconOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (currentStep === WizardStep.SUBMISSION_SUCCESS) {
+      Animated.parallel([
+        Animated.timing(iconScale, {
+          toValue: 1,
+          duration: 420,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(iconOpacity, {
+          toValue: 1,
+          duration: 420,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      iconScale.setValue(0.9);
+      iconOpacity.setValue(0);
+    }
+  }, [currentStep, iconOpacity, iconScale]);
 
   const handleAnalyzeWithAI = async (): Promise<void> => {
     if (!userDescription.trim()) {
@@ -284,9 +313,21 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
 
       case WizardStep.SUBMISSION_SUCCESS:
         return (
-          <View style={styles.stepContainer}>
+          <View style={[styles.stepContainer, styles.successFull]}>
             <View style={styles.successContainer}>
-              <Text style={styles.successIcon}>✅</Text>
+              <Animated.View
+                style={{
+                  transform: [{ scale: iconScale }],
+                  opacity: iconOpacity,
+                }}
+              >
+                <Image
+                  source={require("../assets/icons/correct.png")}
+                  style={styles.successIconImage}
+                  resizeMode="contain"
+                />
+              </Animated.View>
+
               <Text style={styles.successTitle}>
                 Report Submitted Successfully!
               </Text>
@@ -296,21 +337,16 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
                 reports section.
               </Text>
 
-              <View style={styles.successButtonContainer}>
-                <TouchableOpacity
-                  style={[styles.successButton, styles.backToHomeButton]}
-                  onPress={onClose} // This will close the wizard and go back to home
-                >
-                  <Text style={styles.successButtonText}>Back to Home</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.successButton, styles.reportAnotherButton]}
-                  onPress={resetWizard}
-                >
-                  <Text style={styles.reportAnotherButtonText}>
-                    Report Another Issue
-                  </Text>
+              <View style={styles.successButtonWrapper}>
+                <TouchableOpacity onPress={onClose} activeOpacity={0.92}>
+                  <LinearGradient
+                    colors={[theme.Colors.primaryDark, theme.Colors.primary]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={[styles.ctaButton, styles.successConfirmGradient]}
+                  >
+                    <Text style={styles.ctaButtonText}>Confirm</Text>
+                  </LinearGradient>
                 </TouchableOpacity>
               </View>
             </View>
@@ -436,6 +472,11 @@ const styles = StyleSheet.create({
   stepContainer: {
     padding: 20,
   },
+  successFull: {
+    flex: 1,
+    justifyContent: "center",
+    padding: 20,
+  },
   stepTitle: {
     fontSize: 20,
     fontWeight: "bold",
@@ -554,6 +595,22 @@ const styles = StyleSheet.create({
   successContainer: {
     alignItems: "center",
     paddingVertical: 40,
+  },
+  successIconImage: {
+    width: 96,
+    height: 96,
+    marginBottom: 16,
+  },
+  successButtonWrapper: {
+    width: "100%",
+    marginTop: 8,
+    paddingHorizontal: 8,
+  },
+  successConfirmGradient: {
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    alignItems: "center",
   },
   successIcon: {
     fontSize: 64,

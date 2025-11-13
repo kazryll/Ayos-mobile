@@ -6,7 +6,6 @@ import React, { JSX, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -41,12 +40,10 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
   const [userDescription, setUserDescription] = useState<string>("");
   const [aiAnalysis, setAiAnalysis] = useState<AIAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
-  const [showAIModal, setShowAIModal] = useState<boolean>(false);
   const [reportLocation, setReportLocation] = useState<
     ReportData["location"] | null
   >(null);
   const [reportImages, setReportImages] = useState<string[]>([]);
-
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
 
@@ -66,13 +63,11 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
     }
 
     setIsAnalyzing(true);
-    setShowAIModal(true);
 
     try {
       const analysis = await analyzeIssueWithAI(userDescription);
       setAiAnalysis(analysis);
-      setCurrentStep(WizardStep.ADD_LOCATION); // ← CHANGE THIS LINE
-      setShowAIModal(false);
+      setCurrentStep(WizardStep.ADD_LOCATION); // Automatically move to Step 2 (Location)
     } catch (error) {
       Alert.alert(
         "Analysis Failed",
@@ -145,16 +140,10 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
     }
   };
 
-  const handleCancel = (): void => {
-    setShowAIModal(false);
-    setIsAnalyzing(false);
-  };
-
   const resetWizard = (): void => {
     setCurrentStep(WizardStep.DESCRIBE_ISSUE);
     setUserDescription("");
     setAiAnalysis(null);
-    setShowAIModal(false);
     onClose(); // Call the onClose prop to close the modal
   };
 
@@ -246,10 +235,17 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
                 styles.ctaButton,
                 !userDescription.trim() && styles.ctaButtonDisabled,
               ]}
-              onPress={() => setShowAIModal(true)}
-              disabled={!userDescription.trim()}
+              onPress={handleAnalyzeWithAI}
+              disabled={!userDescription.trim() || isAnalyzing}
             >
-              <Text style={styles.ctaButtonText}>Analyze with AI</Text>
+              {isAnalyzing ? (
+                <>
+                  <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
+                  <Text style={styles.ctaButtonText}>Analyzing...</Text>
+                </>
+              ) : (
+                <Text style={styles.ctaButtonText}>Next</Text>
+              )}
             </TouchableOpacity>
           </View>
         );
@@ -366,48 +362,6 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
       {renderHeader()}
 
       <ScrollView style={styles.content}>{renderStepContent()}</ScrollView>
-
-      {/* AI Analysis Modal */}
-      <Modal
-        visible={showAIModal}
-        transparent
-        animationType="slide"
-        onRequestClose={handleCancel}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Analyze with AI</Text>
-
-            {isAnalyzing ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#007AFF" />
-                <Text style={styles.loadingText}>
-                  AI is analyzing your description...
-                </Text>
-                <Text style={styles.loadingSubtext}>
-                  Categorizing and summarizing your issue
-                </Text>
-              </View>
-            ) : (
-              <View style={styles.modalActions}>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.cancelButton]}
-                  onPress={handleCancel}
-                >
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.confirmButton]}
-                  onPress={handleAnalyzeWithAI}
-                >
-                  <Text style={styles.confirmButtonText}>Confirm</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 };

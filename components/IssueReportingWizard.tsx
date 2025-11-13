@@ -235,14 +235,14 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
           <View style={styles.stepContainer}>
             <Text style={styles.stepTitle}>Describe Your Issues</Text>
             <Text style={styles.stepDescription}>
-              Simply tell us what you've observed in your own words. Our AI will
+              Simply tell us what you&apos;ve observed in your own words. Our AI will
               automatically categorize and structure your report for the
               government.
             </Text>
 
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>
-                What's happening in your community?
+                What&apos;s happening in your community?
               </Text>
               <TextInput
                 style={styles.textInput}
@@ -375,7 +375,7 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
         style={styles.header}
       >
         <View style={styles.headerRow}>
-          <Text style={styles.title}>AI-Powered Reporting</Text>
+          <Text style={styles.title}>Submit a Report</Text>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <Text style={styles.closeButtonText}>×</Text>
           </TouchableOpacity>

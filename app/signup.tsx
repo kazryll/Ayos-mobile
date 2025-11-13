@@ -47,7 +47,7 @@ export default function SignupScreen() {
     }
 
     if (password !== confirmPassword) {
-      console.log("❌ [SIGNUP PAGE] Passwords don't match");
+      console.log("❌ [SIGNUP PAGE] Passwords don&apos;t match");
       Alert.alert("Error", "Passwords do not match");
       return;
     }
@@ -83,7 +83,7 @@ export default function SignupScreen() {
       />
 
       {/* Title */}
-      <Text style={styles.title}>Let's get you started!</Text>
+      <Text style={styles.title}>Let&apos;s get you started!</Text>
 
       {/* Full Name */}
       <TextInput

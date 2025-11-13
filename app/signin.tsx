@@ -87,7 +87,7 @@ export default function SignInScreen() {
 
       {/* Link to Signup */}
       <Text style={styles.signupText}>
-        Don't have an account?{" "}
+        Don&apos;t have an account?{" "}
         <Link href="/signup" style={styles.signupLink}>
           Signup
         </Link>

@@ -81,11 +81,26 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({
     }
   };
 
-  const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 90) return "#34C759";
-    if (confidence >= 70) return "#FF9500";
-    return "#FF3B30";
+  const getAssignedDepartment = (category?: string) => {
+    if (!category) return "General";
+    const map: { [key: string]: string } = {
+      infrastructure: "DPWH - Roads Division",
+      utilities: "Baguio City Utilities",
+      environment: "City Environment Office",
+      "public safety": "Public Safety Division",
+      "social services": "Social Welfare Department",
+      other: "General Services Office",
+    };
+
+    const key = category.toLowerCase();
+    return map[key] || "General";
   };
+
+  const assignedTo = (() => {
+    const dept = (aiAnalysis as any)?.department;
+    if (dept) return dept;
+    return getAssignedDepartment(aiAnalysis?.category);
+  })();
 
   return (
     <ScrollView style={styles.container}>
@@ -99,14 +114,14 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({
           Review & Submit
         </Text>
         <Text style={[styles.subtitle, styles.subtitleOnGradient]}>
-          Add optional photos and review your AI-structured report before
+          Add photos and review your AI-generated report before
           submission
         </Text>
       </LinearGradient>
 
       {/* Supporting Photos Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Supporting Photos (Optional)</Text>
+        <Text style={styles.sectionTitle}>Supporting Photos</Text>
         <Text style={styles.sectionDescription}>
           Add photos to support your report
         </Text>
@@ -119,16 +134,16 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({
               style={styles.imagesContainer}
             >
               {images.map((uri, index) => (
-                <View key={index} style={styles.imageWrapper}>
-                  <Image source={{ uri }} style={styles.image} />
-                  <TouchableOpacity
-                    style={styles.removeButton}
-                    onPress={() => removeImage(index)}
-                  >
-                    <Text style={styles.removeButtonText}>×</Text>
-                  </TouchableOpacity>
-                </View>
-              ))}
+                    <View key={uri} style={styles.imageWrapper}>
+                      <Image source={{ uri }} style={styles.image} />
+                      <TouchableOpacity
+                        style={styles.removeButton}
+                        onPress={() => removeImage(index)}
+                      >
+                        <Text style={styles.removeButtonText}>×</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ))}
             </ScrollView>
           ) : (
             <View style={styles.noImagesContainer}>
@@ -163,9 +178,9 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({
         </View>
       </View>
 
-      {/* AI-Structured Report Summary */}
+      {/* AI-Generated Report Summary */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>AI-Structured Report Summary</Text>
+        <Text style={styles.sectionTitle}>AI-Generated Report Summary</Text>
 
         <View style={styles.summaryGrid}>
           {/* Category */}
@@ -185,7 +200,7 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({
                 { color: getPriorityColor(aiAnalysis?.priority || "") },
               ]}
             >
-              {aiAnalysis?.priority || "Not specified"}
+              {aiAnalysis?.priority ? String(aiAnalysis.priority).toUpperCase() : "Not specified"}
             </Text>
           </View>
 
@@ -197,12 +212,10 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({
             </Text>
           </View>
 
-          {/* Department */}
+          {/* Assigned To */}
           <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>Department:</Text>
-            <Text style={styles.summaryValue}>
-              Public Works - Roads Division
-            </Text>
+            <Text style={styles.summaryLabel}>Assigned To:</Text>
+            <Text style={styles.summaryValue}>{assignedTo}</Text>
           </View>
 
           {/* Location */}
@@ -213,15 +226,7 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({
             </Text>
           </View>
 
-          {/* Confidence */}
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>Confidence:</Text>
-            <Text
-              style={[styles.summaryValue, { color: getConfidenceColor(85) }]}
-            >
-              85%
-            </Text>
-          </View>
+          {/* Confidence removed per design update */}
         </View>
       </View>
 
@@ -253,7 +258,7 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({
           disabled={isSubmitting}
         >
           <Text style={styles.submitButtonText}>
-            {isSubmitting ? "Submitting..." : "Submit AI Report"}
+            {isSubmitting ? "Submitting..." : "Submit Report"}
           </Text>
         </TouchableOpacity>
       </View>

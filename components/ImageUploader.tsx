@@ -57,7 +57,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         style={styles.headerGradient}
       >
         <Text style={[styles.title, styles.titleOnGradient]}>
-          Add Photos (Optional)
+          Add Photos
         </Text>
         <Text style={[styles.subtitle, styles.subtitleOnGradient]}>
           Upload up to 5 photos for better context

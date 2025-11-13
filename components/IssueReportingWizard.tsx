@@ -240,7 +240,11 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
             >
               {isAnalyzing ? (
                 <>
-                  <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
+                  <ActivityIndicator
+                    size="small"
+                    color="#fff"
+                    style={{ marginRight: 8 }}
+                  />
                   <Text style={styles.ctaButtonText}>Analyzing...</Text>
                 </>
               ) : (

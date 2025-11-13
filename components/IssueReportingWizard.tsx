@@ -248,7 +248,8 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
                 style={styles.textInput}
                 multiline
                 numberOfLines={6}
-                placeholder="May lubak dito sa bakanteng..."
+                placeholder="May lubak dito sa bakakeng..."
+                placeholderTextColor="#8E8E93"
                 value={userDescription}
                 onChangeText={setUserDescription}
                 textAlignVertical="top"

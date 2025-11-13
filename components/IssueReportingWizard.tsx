@@ -90,10 +90,24 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
 
     try {
       const reportData = {
+        title: aiAnalysis?.summary || userDescription.substring(0, 50) || "Issue Report", // ADD TITLE
         description: userDescription,
+        category: aiAnalysis?.category || "other",
+        subcategory: aiAnalysis?.subcategory || "",
+        priority: aiAnalysis?.priority || "medium",
+        keywords: aiAnalysis?.keywords || [],
+        suggested_actions: aiAnalysis?.suggested_actions || [],
+        urgency_assessment: getUrgencyAssessment(aiAnalysis?.priority || IssuePriority.MEDIUM),
         aiAnalysis: aiAnalysis,
-        location: reportLocation || null, // ← CHANGE TO null
-        images: images.length > 0 ? images : null, // ← CHANGE TO null
+        location: reportLocation ? {
+          address: reportLocation.address,
+          latitude: reportLocation.latitude,
+          longitude: reportLocation.longitude,
+          city: reportLocation.city || "",
+          province: reportLocation.province || "",
+          country: "Philippines"
+        } : null,
+        images: images.length > 0 ? images : null,
         submittedAnonymously: submittedAnonymously,
         department: aiAnalysis
           ? getAssignedDepartment(aiAnalysis.category)
@@ -101,7 +115,11 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
         status: "submitted",
       };
 
-      console.log("📤 Submitting report...");
+      console.log("📤 Submitting report with data:", {
+        title: reportData.title,
+        location: reportData.location?.address,
+        category: reportData.category,
+      });
 
       const reportId = await submitReport(
         reportData,

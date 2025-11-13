@@ -1,10 +1,10 @@
 import { Stack, useRouter, useSegments } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { useEffect, useState } from "react";
 import { Platform } from "react-native";
 import InstallButton from "../components/InstallButton";
 import { auth } from "../config/firebase";
-import * as SplashScreen from 'expo-splash-screen';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -13,17 +13,17 @@ export default function Layout() {
   const segments = useSegments();
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [initialRouteChecked, setInitialRouteChecked] = useState(false);
 
   // Auth State Listener
   useEffect(() => {
     console.log("🔥 Setting up auth state listener");
 
     const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
-      console.log(
-        "🔥 Auth state changed:",
-        user ? `User: ${user.email}` : "No user"
-      );
+      if (user) {
+        console.log("🔥 Auth state changed: User:", user.email);
+      } else {
+        console.log("🔥 Auth state changed: No user (possibly logged out)");
+      }
       setUser(user);
       setAuthLoading(false);
     });
@@ -45,32 +45,32 @@ export default function Layout() {
       return;
     }
 
-    if (!initialRouteChecked) {
-      console.log(
-        "📍 Initial route check. Segments:",
-        segments,
-        "User:",
-        user ? "yes" : "no"
-      );
+    console.log(
+      "📍 Route check. Segments:",
+      segments,
+      "User:",
+      user ? "yes" : "no"
+    );
 
-      // Initial route determination
-      if (!user) {
-        // No user - redirect to signin if not already there
-        if (segments[0] !== "signin" && segments[0] !== "signup") {
-          console.log("🔒 No user - redirecting to signin");
-          router.replace("/signin");
-        }
+    // Route determination - runs every time auth state changes
+    if (!user) {
+      // No user - redirect to signin if not already there
+      if (segments[0] !== "signin" && segments[0] !== "signup") {
+        console.log("🔒 No user detected - redirecting to signin");
+        router.replace("/signin");
       } else {
-        // User exists - redirect to home if not already there
-        if (segments[0] !== "home") {
-          console.log("🚀 User found - redirecting to home");
-          router.replace("/home");
-        }
+        console.log("🔒 No user but already on signin/signup page");
       }
-
-      setInitialRouteChecked(true);
+    } else {
+      // User exists - redirect to home if not already there
+      if (segments[0] !== "home") {
+        console.log("🚀 User found - redirecting to home");
+        router.replace("/home");
+      } else {
+        console.log("🚀 User found and already on home page");
+      }
     }
-  }, [authLoading, user, segments, initialRouteChecked]);
+  }, [authLoading, user, segments]);
 
   // Your existing PWA setup effects
   useEffect(() => {

@@ -1,11 +1,10 @@
 // components/BottomNav.tsx - Fix the ImageIcon usage
-import { View, Text, TouchableOpacity, StyleSheet, Modal, Alert } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useState } from "react";
-import { auth } from "../config/firebase";
+import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { signOut } from "../services/auth";
-import ImageIcon from './ImageIcon';
-import IssueReportingWizard from './IssueReportingWizard';
+import ImageIcon from "./ImageIcon";
+import IssueReportingWizard from "./IssueReportingWizard";
 
 const BottomNav = () => {
   console.log("🔵 BOTTOMNAV WITH NAVIGATION");
@@ -13,7 +12,9 @@ const BottomNav = () => {
   const route = useRoute();
   const [showReportingWizard, setShowReportingWizard] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
   const navItems = [
     { key: "home", label: "Home", icon: "home" },
     { key: "leaderboards", label: "Leaderboards", icon: "trophy" },
@@ -41,12 +42,41 @@ const BottomNav = () => {
 
   const handleLogout = async () => {
     try {
-      setShowProfileMenu(false);
-      await signOut();
-      // Navigation will be handled by auth state change
+      console.log("🔓 [LOGOUT] User initiating logout...");
+      setShowLogoutConfirm(true);
     } catch (error) {
-      Alert.alert("Error", "Failed to sign out");
+      console.error("❌ [LOGOUT] Unexpected error:", error);
     }
+  };
+
+  const confirmLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      console.log("⏳ [LOGOUT] Signing out from Firebase...");
+      const result = await signOut();
+      if (result.error) {
+        console.error("❌ [LOGOUT] Logout error:", result.error);
+        setIsLoggingOut(false);
+        setShowLogoutConfirm(false);
+        setShowProfileMenu(false);
+        // Error will be shown via auth state change or manual alert
+      } else {
+        console.log("✅ [LOGOUT] Logout successful, waiting for redirect...");
+        // Navigation will be handled by auth state change in _layout.tsx
+        setShowLogoutConfirm(false);
+        setShowProfileMenu(false);
+      }
+    } catch (error) {
+      console.error("❌ [LOGOUT] Unexpected logout error:", error);
+      setIsLoggingOut(false);
+      setShowLogoutConfirm(false);
+      setShowProfileMenu(false);
+    }
+  };
+
+  const cancelLogout = () => {
+    console.log("❌ [LOGOUT] Logout cancelled");
+    setShowLogoutConfirm(false);
   };
 
   const handleProfile = () => {
@@ -56,7 +86,8 @@ const BottomNav = () => {
 
   const handleSettings = () => {
     setShowProfileMenu(false);
-    Alert.alert("Coming Soon", "Settings feature coming soon!");
+    // Just log for now, settings can be implemented later
+    console.log("⚙️ Settings clicked (Coming Soon)");
   };
 
   const isActive = (screenName: string) => {
@@ -90,10 +121,12 @@ const BottomNav = () => {
             // REMOVED the color prop since ImageIcon doesn't support it
           />
           {!item.isCTA && (
-            <Text style={[
-              styles.navLabel,
-              isActive(item.key) && styles.activeNavLabel
-            ]}>
+            <Text
+              style={[
+                styles.navLabel,
+                isActive(item.key) && styles.activeNavLabel,
+              ]}
+            >
               {item.label}
             </Text>
           )}
@@ -120,27 +153,73 @@ const BottomNav = () => {
         <View style={styles.profileMenuOverlay}>
           <View style={styles.profileMenu}>
             <Text style={styles.profileMenuTitle}>Account</Text>
-            
-            <TouchableOpacity style={styles.profileMenuItem} onPress={handleProfile}>
+
+            <TouchableOpacity
+              style={styles.profileMenuItem}
+              onPress={handleProfile}
+            >
               <Text style={styles.profileMenuText}>Profile</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.profileMenuItem} onPress={handleSettings}>
+
+            <TouchableOpacity
+              style={styles.profileMenuItem}
+              onPress={handleSettings}
+            >
               <Text style={styles.profileMenuText}>Settings</Text>
             </TouchableOpacity>
-            
+
             <View style={styles.profileMenuDivider} />
-            
-            <TouchableOpacity style={styles.profileMenuItem} onPress={handleLogout}>
+
+            <TouchableOpacity
+              style={styles.profileMenuItem}
+              onPress={handleLogout}
+            >
               <Text style={styles.profileMenuLogout}>Logout</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.profileMenuCancel} 
+
+            <TouchableOpacity
+              style={styles.profileMenuCancel}
               onPress={handleCloseProfileMenu}
             >
               <Text style={styles.profileMenuCancelText}>Cancel</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Logout Confirmation Modal */}
+      <Modal
+        visible={showLogoutConfirm}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={cancelLogout}
+      >
+        <View style={styles.logoutConfirmOverlay}>
+          <View style={styles.logoutConfirmDialog}>
+            <Text style={styles.logoutConfirmTitle}>Logout</Text>
+            <Text style={styles.logoutConfirmMessage}>
+              Are you sure you want to logout?
+            </Text>
+
+            <View style={styles.logoutConfirmButtons}>
+              <TouchableOpacity
+                style={[styles.logoutConfirmButton, styles.cancelButton]}
+                onPress={cancelLogout}
+                disabled={isLoggingOut}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.logoutConfirmButton, styles.logoutButton]}
+                onPress={confirmLogout}
+                disabled={isLoggingOut}
+              >
+                <Text style={styles.logoutButtonText}>
+                  {isLoggingOut ? "Logging out..." : "Logout"}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -253,6 +332,61 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#3498db",
     fontWeight: "bold",
+  },
+  // Logout Confirmation Modal Styles
+  logoutConfirmOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  logoutConfirmDialog: {
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 24,
+    marginHorizontal: 20,
+    alignItems: "center",
+  },
+  logoutConfirmTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#2c3e50",
+    marginBottom: 12,
+  },
+  logoutConfirmMessage: {
+    fontSize: 16,
+    color: "#7f8c8d",
+    marginBottom: 24,
+    textAlign: "center",
+  },
+  logoutConfirmButtons: {
+    flexDirection: "row",
+    width: "100%",
+    gap: 12,
+  },
+  logoutConfirmButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cancelButton: {
+    backgroundColor: "#ecf0f1",
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#2c3e50",
+  },
+  logoutButton: {
+    backgroundColor: "#e74c3c",
+  },
+  logoutButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "white",
   },
 });
 

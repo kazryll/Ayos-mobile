@@ -26,33 +26,47 @@ export default function SignupScreen() {
   };
 
   const handleSignUp = async () => {
+    console.log("🔘 [SIGNUP PAGE] Sign up button clicked!");
     const { displayName, email, password, confirmPassword } = formData;
 
     if (!displayName || !email || !password || !confirmPassword) {
+      console.log("❌ [SIGNUP PAGE] Missing fields");
       Alert.alert("Error", "Please fill in all fields");
       return;
     }
 
+    if (password.length < 6) {
+      console.log("❌ [SIGNUP PAGE] Password too short:", password.length);
+      Alert.alert(
+        "Weak Password",
+        "Password must be at least 6 characters long.\n\nCurrent length: " +
+          password.length +
+          " characters"
+      );
+      return;
+    }
+
     if (password !== confirmPassword) {
+      console.log("❌ [SIGNUP PAGE] Passwords don't match");
       Alert.alert("Error", "Passwords do not match");
       return;
     }
 
-    if (password.length < 6) {
-      Alert.alert("Error", "Password should be at least 6 characters");
-      return;
-    }
-
+    console.log("✅ [SIGNUP PAGE] All validations passed, calling signUp()");
     setLoading(true);
 
     const { user, error } = await signUp(email, password, displayName);
 
+    console.log("📤 [SIGNUP PAGE] SignUp response:", { user, error });
+
     if (error) {
+      console.log("❌ [SIGNUP PAGE] Signup failed:", error);
       Alert.alert("Sign Up Failed", error);
     } else {
+      console.log("✅ [SIGNUP PAGE] Signup success!");
       Alert.alert("Success", "Account created successfully!");
-      // Navigate to home after successful signup
-      router.replace("/home");
+      // Navigate to signin after successful signup
+      router.replace("/signin");
     }
 
     setLoading(false);

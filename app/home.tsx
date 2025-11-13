@@ -49,28 +49,45 @@ export default function HomeScreen() {
         return;
       }
 
-      console.log("Loading data for user:", user.uid);
+      console.log("📊 Loading home data for user:", user.uid);
 
-      // TEMPORARILY COMMENT OUT SERVICE CALLS
-      const stats = await getUserStats(user.uid);
-      setUserStats(stats);
+      // Load user statistics
+      try {
+        const stats = await getUserStats(user.uid);
+        console.log("✅ User stats loaded:", stats);
+        setUserStats(stats);
+      } catch (error) {
+        console.warn("⚠️ Could not load user stats, using defaults", error);
+        setUserStats({
+          totalReports: 0,
+          pendingReports: 0,
+          inProgressReports: 0,
+          resolvedReports: 0,
+        });
+      }
 
-      setUserStats({
-        totalReports: 0,
-        pendingReports: 0,
-        inProgressReports: 0,
-        resolvedReports: 0,
-      });
+      // Load user profile
+      try {
+        const profile = await getUserProfile(user.uid);
+        console.log("✅ User profile loaded:", profile);
+        setUserProfile(profile);
+      } catch (error) {
+        console.warn("⚠️ Could not load user profile", error);
+        setUserProfile(null);
+      }
 
-      const profile = await getUserProfile(user.uid);
-      setUserProfile(profile);
-      setUserProfile(null);
-
-      const nearby = await getNearbyReports();
-      setRecentReports(nearby || []);
-      setRecentReports([]);
+      // Load nearby reports - THIS IS THE KEY PART
+      try {
+        console.log("📍 Fetching nearby reports...");
+        const nearby = await getNearbyReports();
+        console.log("✅ Nearby reports loaded:", nearby?.length || 0, "reports");
+        setRecentReports(nearby || []);
+      } catch (error) {
+        console.error("❌ Error loading nearby reports:", error);
+        setRecentReports([]);
+      }
     } catch (error) {
-      console.error("Error loading home data:", error);
+      console.error("❌ Error loading home data:", error);
     } finally {
       setLoading(false);
     }
@@ -128,6 +145,22 @@ export default function HomeScreen() {
 
   const getReportCategory = (report: any) => {
     return report && report.category ? report.category : "General";
+  };
+
+  const getCategoryColor = (report: any) => {
+    const category = getReportCategory(report);
+    switch (category.toLowerCase()) {
+      case "road":
+        return "#FF6B6B"; // Red
+      case "nature":
+        return "#51CF66"; // Green
+      case "veterinary":
+        return "#FFD93D"; // Yellow
+      case "disturbance":
+        return "#A78BFA"; // Purple
+      default:
+        return "#6C757D"; // Gray
+    }
   };
 
   if (loading) {
@@ -216,7 +249,14 @@ export default function HomeScreen() {
         {/* Issues Near You */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Issues Near You</Text>
+            <View>
+              <Text style={styles.sectionTitle}>Issues Near You</Text>
+              {recentReports.length > 0 && (
+                <Text style={styles.reportCount}>
+                  {recentReports.length} report{recentReports.length !== 1 ? 's' : ''} found
+                </Text>
+              )}
+            </View>
             <TouchableOpacity onPress={handleSeeAllMap}>
               <Text style={styles.seeAll}>Full Map →</Text>
             </TouchableOpacity>
@@ -231,13 +271,22 @@ export default function HomeScreen() {
                 onPress={() => handleReportPress(report.id)}
               >
                 <View style={styles.reportInfo}>
-                  <Text style={styles.reportTitle}>
-                    {getReportTitle(report)}
-                  </Text>
+                  <View style={styles.reportHeader}>
+                    <Text style={styles.reportTitle}>
+                      {getReportTitle(report)}
+                    </Text>
+                    <View style={[styles.categoryBadge, { backgroundColor: getCategoryColor(report) }]}>
+                      <Text style={styles.categoryBadgeText}>
+                        {getReportCategory(report)}
+                      </Text>
+                    </View>
+                  </View>
                   <Text style={styles.reportLocation}>
-                    {getReportLocation(report)}
+                    📍 {getReportLocation(report)}
                   </Text>
-                  <Text style={styles.reportDate}>{getReportDate(report)}</Text>
+                  <Text style={styles.reportDate}>
+                    📅 {getReportDate(report)}
+                  </Text>
                 </View>
                 <View style={[styles.statusBadge, getStatusBadgeStyle(report)]}>
                   <Text style={styles.statusText}>
@@ -445,6 +494,11 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     fontSize: 14,
   },
+  reportCount: {
+    fontSize: 12,
+    color: "#95a5a6",
+    marginTop: 2,
+  },
   reportItem: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -456,11 +510,28 @@ const styles = StyleSheet.create({
   reportInfo: {
     flex: 1,
   },
+  reportHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
   reportTitle: {
     fontSize: 16,
     fontWeight: "bold",
     color: "#2c3e50",
-    marginBottom: 4,
+    flex: 1,
+  },
+  categoryBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginLeft: 8,
+  },
+  categoryBadgeText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "white",
   },
   reportLocation: {
     fontSize: 12,

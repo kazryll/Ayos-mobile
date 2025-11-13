@@ -4,7 +4,7 @@ import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
 import * as Location from 'expo-location';
 
 interface LocationPinnerProps {
-  onLocationConfirm: (location: { latitude: number; longitude: number; address: string }) => void;
+  onLocationConfirm: (location: { latitude: number; longitude: number; address: string; city?: string; province?: string }) => void;
   onBack: () => void;
 }
 
@@ -21,13 +21,14 @@ const defaultCenter = {
 };
 
 const LocationPinner: React.FC<LocationPinnerProps> = ({ onLocationConfirm, onBack }) => {
-  const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number; address: string } | null>(null);
-  const [selectedLocation, setSelectedLocation] = useState<{ latitude: number; longitude: number; address: string } | null>(null);
+  const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number; address: string; city?: string; province?: string } | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<{ latitude: number; longitude: number; address: string; city?: string; province?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [mapLoading, setMapLoading] = useState(true);
   const [scriptLoaded, setScriptLoaded] = useState(false);
   const [scriptError, setScriptError] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isGeocodingAddress, setIsGeocodingAddress] = useState(false);
   
   const mapRef = useRef<google.maps.Map | null>(null);
   const markerRef = useRef<google.maps.Marker | null>(null);
@@ -54,21 +55,54 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({ onLocationConfirm, onBa
         accuracy: Location.Accuracy.High,
       });
       
-      console.log('📍 Location found, reverse geocoding...');
-      let addressResponse = await Location.reverseGeocodeAsync({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-      });
-
-      const address = formatAddress(addressResponse[0]);
+      const lat = location.coords.latitude;
+      const lng = location.coords.longitude;
+      
+      console.log('📍 Location found:', lat, lng);
+      console.log('📍 Reverse geocoding with Google Maps...');
+      
+      // Use Google Maps Geocoding API
+      const geocodingUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_MAPS_API_KEY}`;
+      
+      const response = await fetch(geocodingUrl);
+      const data = await response.json();
+      
+      console.log('📍 Google Geocoding response:', data);
+      
+      let address = '';
+      let city = '';
+      let province = '';
+      
+      if (data.results && data.results.length > 0) {
+        const result = data.results[0];
+        address = result.formatted_address;
+        
+        // Parse address components
+        for (const component of result.address_components) {
+          const types = component.types;
+          
+          if (types.includes('locality')) {
+            city = component.long_name;
+          }
+          if (types.includes('administrative_area_level_1')) {
+            province = component.long_name;
+          }
+        }
+        
+        console.log('✅ Extracted:', { address, city, province });
+      } else {
+        address = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+      }
 
       const locationData = {
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        address: address || 'Current Location',
+        latitude: lat,
+        longitude: lng,
+        address,
+        city,
+        province,
       };
 
-      console.log('📍 Location data:', locationData);
+      console.log('📍 Location data set:', locationData);
       setCurrentLocation(locationData);
       setSelectedLocation(locationData);
       
@@ -81,14 +115,32 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({ onLocationConfirm, onBa
   };
 
   const formatAddress = (address: Location.LocationGeocodedAddress | null): string => {
-    if (!address) return '';
+    if (!address) {
+      console.warn('⚠️ No address object provided');
+      return '';
+    }
+    
+    console.log('🗺️ Full address object:', JSON.stringify(address, null, 2));
     
     const parts = [];
     if (address.street) parts.push(address.street);
+    if (address.district) parts.push(address.district); // Barangay/District
     if (address.city) parts.push(address.city);
     if (address.region) parts.push(address.region);
+    if (address.country && address.country !== 'Philippines') parts.push(address.country);
     
-    return parts.join(', ');
+    // If no parts found, try alternative fields
+    if (parts.length === 0) {
+      console.warn('⚠️ No standard address fields found, trying alternatives');
+      if (address.name) parts.push(address.name);
+      if (address.postalCode) parts.push(address.postalCode);
+      if (address.isoCountryCode) parts.push(address.isoCountryCode);
+    }
+    
+    const formattedAddress = parts.join(', ');
+    console.log('✅ Formatted address:', formattedAddress);
+    
+    return formattedAddress;
   };
 
   const handleMapLoad = () => {
@@ -111,11 +163,16 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({ onLocationConfirm, onBa
     const lat = event.latLng.lat();
     const lng = event.latLng.lng();
     
+    console.log('📍 Map clicked at:', lat, lng);
+    
+    // Set geocoding flag to prevent premature confirmation
+    setIsGeocodingAddress(true);
+    
     // Immediately set coordinates while we geocode
     const manualLocation = {
       latitude: lat,
       longitude: lng,
-      address: `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`,
+      address: `Getting address...`,
     };
 
     setSelectedLocation(manualLocation);
@@ -126,23 +183,67 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({ onLocationConfirm, onBa
 
   const reverseGeocode = async (lat: number, lng: number) => {
     try {
-      let addressResponse = await Location.reverseGeocodeAsync({
-        latitude: lat,
-        longitude: lng,
-      });
-
-      const address = formatAddress(addressResponse[0]);
-      if (address) {
-        setSelectedLocation(prev => prev ? { ...prev, address } : prev);
+      console.log('📍 Starting reverse geocoding via Google Maps API for:', lat, lng);
+      
+      // Use Google Maps Geocoding API
+      const geocodingUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_MAPS_API_KEY}`;
+      
+      const response = await fetch(geocodingUrl);
+      const data = await response.json();
+      
+      console.log('📍 Google Geocoding response:', data);
+      
+      if (data.results && data.results.length > 0) {
+        const result = data.results[0];
+        
+        // Extract address components
+        let address = result.formatted_address;
+        let city = '';
+        let province = '';
+        
+        // Parse address components to get city and province
+        for (const component of result.address_components) {
+          const types = component.types;
+          
+          if (types.includes('locality')) {
+            city = component.long_name;
+          }
+          if (types.includes('administrative_area_level_1')) {
+            province = component.long_name;
+          }
+        }
+        
+        console.log('✅ Extracted:', { address, city, province });
+        
+        // Update selected location with full address info
+        setSelectedLocation(prev => prev ? { 
+          ...prev, 
+          address,
+          city,
+          province
+        } : null);
+      } else {
+        console.warn('⚠️ No results from Google Geocoding, using coordinates');
+        const fallbackAddress = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        setSelectedLocation(prev => prev ? { ...prev, address: fallbackAddress } : prev);
       }
     } catch (error) {
-      console.error('Error reverse geocoding:', error);
-      // Keep the coordinates as address if geocoding fails
+      console.error('❌ Error reverse geocoding with Google Maps:', error);
+      const fallbackAddress = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+      setSelectedLocation(prev => prev ? { ...prev, address: fallbackAddress } : prev);
+    } finally {
+      setIsGeocodingAddress(false);
     }
   };
 
   const handleConfirm = () => {
+    if (isGeocodingAddress) {
+      Alert.alert('Please wait', 'Getting address details...');
+      return;
+    }
+    
     if (selectedLocation) {
+      console.log('✅ Confirming location:', selectedLocation);
       onLocationConfirm(selectedLocation);
     } else {
       Alert.alert('No Location Selected', 'Please select a location on the map or use your current location.');
@@ -302,6 +403,11 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({ onLocationConfirm, onBa
               <View style={styles.selectedLocationContainer}>
                 <Text style={styles.selectedLocationTitle}>Selected Location:</Text>
                 <Text style={styles.selectedLocationAddress}>{selectedLocation.address}</Text>
+                {(selectedLocation.city || selectedLocation.province) && (
+                  <Text style={styles.selectedLocationCity}>
+                    {[selectedLocation.city, selectedLocation.province].filter(Boolean).join(', ')}
+                  </Text>
+                )}
                 <Text style={styles.selectedLocationCoords}>
                   Lat: {selectedLocation.latitude.toFixed(6)}, Lng: {selectedLocation.longitude.toFixed(6)}
                 </Text>
@@ -313,15 +419,28 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({ onLocationConfirm, onBa
               <TouchableOpacity 
                 style={[styles.button, styles.backButton]} 
                 onPress={onBack}
+                disabled={isGeocodingAddress}
               >
                 <Text style={styles.backButtonText}>Back</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
-                style={[styles.button, styles.continueButton]} 
+                style={[
+                  styles.button, 
+                  styles.continueButton,
+                  isGeocodingAddress && styles.buttonDisabled
+                ]} 
                 onPress={handleConfirm}
+                disabled={isGeocodingAddress}
               >
-                <Text style={styles.continueButtonText}>Continue</Text>
+                {isGeocodingAddress ? (
+                  <>
+                    <ActivityIndicator size="small" color="#ffffff" style={styles.buttonLoader} />
+                    <Text style={styles.continueButtonText}>Getting address...</Text>
+                  </>
+                ) : (
+                  <Text style={styles.continueButtonText}>Continue</Text>
+                )}
               </TouchableOpacity>
             </View>
           </>
@@ -426,6 +545,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     color: '#1C1C1E',
   },
+  selectedLocationCity: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 8,
+    fontStyle: 'italic',
+  },
   selectedLocationCoords: {
     fontSize: 12,
     color: '#666',
@@ -456,6 +581,12 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
     fontSize: 16,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  buttonLoader: {
+    marginRight: 8,
   },
   primaryButton: {
     backgroundColor: '#007AFF',

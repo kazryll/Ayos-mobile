@@ -33,6 +33,9 @@ export interface ReportData {
     latitude: number;
     longitude: number;
     address: string;
+    city?: string;
+    province?: string;
+    country?: string;
     manualPin?: boolean;
   };
   images?: string[]; // Base64 or URLs

@@ -20,9 +20,19 @@ export default function SignupScreen() {
     confirmPassword: "",
   });
   const [loading, setLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState<string>("");
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+
+    // Real-time password validation
+    if (field === "password") {
+      if (value.length > 0 && value.length < 6) {
+        setPasswordError("Password must be at least 6 characters long.");
+      } else {
+        setPasswordError("");
+      }
+    }
   };
 
   const handleSignUp = async () => {
@@ -35,14 +45,9 @@ export default function SignupScreen() {
       return;
     }
 
-    if (password.length < 6) {
-      console.log("❌ [SIGNUP PAGE] Password too short:", password.length);
-      Alert.alert(
-        "Weak Password",
-        "Password must be at least 6 characters long.\n\nCurrent length: " +
-          password.length +
-          " characters"
-      );
+    if (passwordError) {
+      console.log("❌ [SIGNUP PAGE] Password validation failed");
+      Alert.alert("Invalid Password", passwordError);
       return;
     }
 
@@ -112,12 +117,15 @@ export default function SignupScreen() {
       <TextInput
         placeholder="Password"
         placeholderTextColor="#9c9c9cff"
-        style={styles.input}
+        style={[styles.input, passwordError && styles.inputError]}
         secureTextEntry
         value={formData.password}
         onChangeText={(text) => handleChange("password", text)}
         editable={!loading}
       />
+      {passwordError ? (
+        <Text style={styles.errorMessage}>{passwordError}</Text>
+      ) : null}
 
       {/* Confirm Password */}
       <TextInput
@@ -132,9 +140,12 @@ export default function SignupScreen() {
 
       {/* Sign up Button */}
       <TouchableOpacity
-        style={[styles.button, loading && styles.buttonDisabled]}
+        style={[
+          styles.button,
+          (loading || passwordError) && styles.buttonDisabled,
+        ]}
         onPress={handleSignUp}
-        disabled={loading}
+        disabled={loading || !!passwordError}
       >
         <Text style={styles.buttonText}>
           {loading ? "Creating Account..." : "Sign up"}
@@ -178,6 +189,18 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 15,
     fontSize: 16,
+  },
+  inputError: {
+    borderWidth: 1.5,
+    borderColor: "#FF3B30",
+  },
+  errorMessage: {
+    color: "#FF3B30",
+    fontSize: 13,
+    fontWeight: "500",
+    marginTop: -12,
+    marginBottom: 12,
+    marginLeft: 2,
   },
   button: {
     width: "100%",

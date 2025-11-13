@@ -235,8 +235,8 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
           <View style={styles.stepContainer}>
             <Text style={styles.stepTitle}>Describe Your Issues</Text>
             <Text style={styles.stepDescription}>
-              Simply tell us what you&apos;ve observed in your own words. Our AI will
-              automatically categorize and structure your report for the
+              Simply tell us what you&apos;ve observed in your own words. Our AI
+              will automatically categorize and structure your report for the
               government.
             </Text>
 

@@ -114,8 +114,7 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({
           Review & Submit
         </Text>
         <Text style={[styles.subtitle, styles.subtitleOnGradient]}>
-          Add photos and review your AI-generated report before
-          submission
+          Add photos and review your AI-generated report before submission
         </Text>
       </LinearGradient>
 
@@ -134,16 +133,16 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({
               style={styles.imagesContainer}
             >
               {images.map((uri, index) => (
-                    <View key={uri} style={styles.imageWrapper}>
-                      <Image source={{ uri }} style={styles.image} />
-                      <TouchableOpacity
-                        style={styles.removeButton}
-                        onPress={() => removeImage(index)}
-                      >
-                        <Text style={styles.removeButtonText}>×</Text>
-                      </TouchableOpacity>
-                    </View>
-                  ))}
+                <View key={uri} style={styles.imageWrapper}>
+                  <Image source={{ uri }} style={styles.image} />
+                  <TouchableOpacity
+                    style={styles.removeButton}
+                    onPress={() => removeImage(index)}
+                  >
+                    <Text style={styles.removeButtonText}>×</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
             </ScrollView>
           ) : (
             <View style={styles.noImagesContainer}>
@@ -200,7 +199,9 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({
                 { color: getPriorityColor(aiAnalysis?.priority || "") },
               ]}
             >
-              {aiAnalysis?.priority ? String(aiAnalysis.priority).toUpperCase() : "Not specified"}
+              {aiAnalysis?.priority
+                ? String(aiAnalysis.priority).toUpperCase()
+                : "Not specified"}
             </Text>
           </View>
 

@@ -1,14 +1,14 @@
 // components/ImageIcon.tsx
-import React from 'react';
-import { Image, View, ImageStyle } from 'react-native';
-import theme from '../config/theme';
+import React from "react";
+import { Image, ImageStyle, View } from "react-native";
+import theme from "../config/theme";
 
 const iconMap = {
-  home: require('../assets/icons/home.png'),
-  trophy: require('../assets/icons/trophy.png'),
-  warning: require('../assets/icons/warning.png'),
-  'chart-bar': require('../assets/icons/chart-bar.png'),
-  user: require('../assets/icons/user.png'),
+  home: require("../assets/icons/home.png"),
+  trophy: require("../assets/icons/trophy.png"),
+  warning: require("../assets/icons/warning.png"),
+  "chart-bar": require("../assets/icons/chart-bar.png"),
+  user: require("../assets/icons/user.png"),
 };
 
 type ImageIconProps = {
@@ -20,7 +20,7 @@ type ImageIconProps = {
 const ImageIcon = ({ name, size = 24, color }: ImageIconProps) => {
   const iconSource = iconMap[name];
   const tint = color || theme.Colors.text;
-  
+
   if (!iconSource) {
     console.warn(`Icon "${name}" not found`);
     return null;
@@ -28,13 +28,13 @@ const ImageIcon = ({ name, size = 24, color }: ImageIconProps) => {
 
   return (
     <View style={{ width: size, height: size }}>
-      <Image 
-        source={iconSource} 
-        style={{ 
-          width: size, 
+      <Image
+        source={iconSource}
+        style={{
+          width: size,
           height: size,
           // Apply tint for single-color PNGs where possible
-          tintColor: tint as unknown as ImageStyle['tintColor'],
+          tintColor: tint as unknown as ImageStyle["tintColor"],
         }}
         resizeMode="contain"
       />

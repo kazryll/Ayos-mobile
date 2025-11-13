@@ -1,9 +1,8 @@
 // components/IssueReportingWizard.tsx
 
+import { LinearGradient } from "expo-linear-gradient";
 import { onAuthStateChanged } from "firebase/auth";
 import React, { JSX, useEffect, useState } from "react";
-import { LinearGradient } from 'expo-linear-gradient';
-import theme from '../config/theme';
 import {
   ActivityIndicator,
   Alert,
@@ -16,6 +15,7 @@ import {
   View,
 } from "react-native";
 import { auth } from "../config/firebase";
+import theme from "../config/theme";
 import { analyzeIssueWithAI } from "../services/groqServices";
 import { submitReport } from "../services/reports";
 import {
@@ -437,7 +437,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: 'rgba(255,255,255,0.16)',
+    backgroundColor: "rgba(255,255,255,0.16)",
     justifyContent: "center",
     alignItems: "center",
     marginLeft: 10,
@@ -453,12 +453,12 @@ const styles = StyleSheet.create({
   },
   progressText: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.9)',
+    color: "rgba(255,255,255,0.9)",
     marginBottom: 8,
   },
   progressBar: {
     height: 4,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: "rgba(255,255,255,0.18)",
     borderRadius: 2,
     overflow: "hidden",
   },
@@ -468,7 +468,7 @@ const styles = StyleSheet.create({
   },
   progressPercentage: {
     fontSize: 12,
-    color: 'rgba(255,255,255,0.85)',
+    color: "rgba(255,255,255,0.85)",
     marginTop: 8,
     textAlign: "right",
   },

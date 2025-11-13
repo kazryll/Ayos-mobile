@@ -1,8 +1,7 @@
 import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
+import { LinearGradient } from "expo-linear-gradient";
 import * as Location from "expo-location";
 import React, { useEffect, useRef, useState } from "react";
-import { LinearGradient } from 'expo-linear-gradient';
-import theme from '../config/theme';
 import {
   ActivityIndicator,
   Alert,
@@ -12,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import theme from "../config/theme";
 
 interface LocationPinnerProps {
   onLocationConfirm: (location: {
@@ -358,7 +358,9 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({
             end={{ x: 1, y: 1 }}
             style={styles.headerGradient}
           >
-            <Text style={[styles.title, styles.titleOnGradient]}>Confirm Location</Text>
+            <Text style={[styles.title, styles.titleOnGradient]}>
+              Confirm Location
+            </Text>
             <Text style={[styles.subtitle, styles.subtitleOnGradient]}>
               We need the exact location to route this to the correct local
               office.
@@ -378,7 +380,7 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({
 
   return (
     <ScrollView style={styles.container}>
-        {/* Main Content */}
+      {/* Main Content */}
       <View style={styles.content}>
         <LinearGradient
           colors={[theme.Colors.primaryDark, theme.Colors.primaryLight]}
@@ -386,9 +388,12 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({
           end={{ x: 1, y: 1 }}
           style={styles.headerGradient}
         >
-          <Text style={[styles.title, styles.titleOnGradient]}>Confirm Location</Text>
+          <Text style={[styles.title, styles.titleOnGradient]}>
+            Confirm Location
+          </Text>
           <Text style={[styles.subtitle, styles.subtitleOnGradient]}>
-            We need the exact location to route this to the correct local office.
+            We need the exact location to route this to the correct local
+            office.
           </Text>
         </LinearGradient>
 
@@ -735,11 +740,11 @@ const styles = StyleSheet.create({
   titleOnGradient: {
     color: theme.Colors.background,
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 8,
   },
   subtitleOnGradient: {
-    color: 'rgba(255,255,255,0.92)',
+    color: "rgba(255,255,255,0.92)",
     fontSize: 16,
     marginBottom: 8,
   },

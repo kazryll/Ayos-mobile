@@ -1,11 +1,18 @@
 // components/BottomNav.tsx - Fix the ImageIcon usage
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useState } from "react";
-import { Modal, StyleSheet, Text, TouchableOpacity, View, Platform } from "react-native";
+import {
+  Modal,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import theme from "../config/theme";
 import { signOut } from "../services/auth";
 import ImageIcon from "./ImageIcon";
 import IssueReportingWizard from "./IssueReportingWizard";
-import theme from "../config/theme";
 
 const BottomNav = () => {
   console.log("🔵 BOTTOMNAV WITH NAVIGATION");
@@ -119,7 +126,12 @@ const BottomNav = () => {
           <ImageIcon
             name={item.icon as any}
             size={item.isCTA ? 26 : 22}
-            color={item.isCTA ? theme.Colors.background : (isActive(item.key) && theme.Colors.primary) || theme.Colors.muted}
+            color={
+              item.isCTA
+                ? theme.Colors.background
+                : (isActive(item.key) && theme.Colors.primary) ||
+                  theme.Colors.muted
+            }
           />
           {!item.isCTA && (
             <Text
@@ -242,7 +254,7 @@ const styles = StyleSheet.create({
       width: 0,
       height: -4,
     },
-    shadowOpacity: Platform.OS === 'ios' ? 0.08 : 0.12,
+    shadowOpacity: Platform.OS === "ios" ? 0.08 : 0.12,
     shadowRadius: 6,
     elevation: 10,
   },
@@ -254,7 +266,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   activeNavItem: {
-    backgroundColor: '#eef8f5',
+    backgroundColor: "#eef8f5",
   },
   ctaButton: {
     backgroundColor: theme.Colors.primary,

@@ -1,15 +1,26 @@
-import React, { useState } from 'react';
-import { LinearGradient } from 'expo-linear-gradient';
-import { View, Text, TouchableOpacity, Image, StyleSheet, ScrollView, Alert } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-import theme from '../config/theme';
+import * as ImagePicker from "expo-image-picker";
+import { LinearGradient } from "expo-linear-gradient";
+import React, { useState } from "react";
+import {
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import theme from "../config/theme";
 
 interface ImageUploaderProps {
   onImagesConfirm: (images: string[]) => void;
   onBack: () => void;
 }
 
-const ImageUploader: React.FC<ImageUploaderProps> = ({ onImagesConfirm, onBack }) => {
+const ImageUploader: React.FC<ImageUploaderProps> = ({
+  onImagesConfirm,
+  onBack,
+}) => {
   const [images, setImages] = useState<string[]>([]);
 
   const pickImage = async () => {
@@ -25,16 +36,16 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImagesConfirm, onBack }
 
       // FIXED: Check the correct property names
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        const newImages = result.assets.map(asset => asset.uri);
-        setImages(prev => [...prev, ...newImages].slice(0, 5));
+        const newImages = result.assets.map((asset) => asset.uri);
+        setImages((prev) => [...prev, ...newImages].slice(0, 5));
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to pick image');
+      Alert.alert("Error", "Failed to pick image");
     }
   };
 
   const removeImage = (index: number) => {
-    setImages(prev => prev.filter((_, i) => i !== index));
+    setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -45,8 +56,12 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImagesConfirm, onBack }
         end={{ x: 1, y: 1 }}
         style={styles.headerGradient}
       >
-        <Text style={[styles.title, styles.titleOnGradient]}>Add Photos (Optional)</Text>
-        <Text style={[styles.subtitle, styles.subtitleOnGradient]}>Upload up to 5 photos for better context</Text>
+        <Text style={[styles.title, styles.titleOnGradient]}>
+          Add Photos (Optional)
+        </Text>
+        <Text style={[styles.subtitle, styles.subtitleOnGradient]}>
+          Upload up to 5 photos for better context
+        </Text>
       </LinearGradient>
 
       <ScrollView style={styles.imagesContainer}>
@@ -54,15 +69,15 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImagesConfirm, onBack }
           {images.map((uri, index) => (
             <View key={index} style={styles.imageContainer}>
               <Image source={{ uri }} style={styles.image} />
-              <TouchableOpacity 
-                style={styles.removeButton} 
+              <TouchableOpacity
+                style={styles.removeButton}
                 onPress={() => removeImage(index)}
               >
                 <Text style={styles.removeButtonText}>×</Text>
               </TouchableOpacity>
             </View>
           ))}
-          
+
           {images.length < 5 && (
             <TouchableOpacity style={styles.addButton} onPress={pickImage}>
               <Text style={styles.addButtonText}>+</Text>
@@ -73,20 +88,22 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImagesConfirm, onBack }
       </ScrollView>
 
       <View style={styles.buttonContainer}>
-        <TouchableOpacity 
-          style={[styles.button, styles.secondaryButton]} 
+        <TouchableOpacity
+          style={[styles.button, styles.secondaryButton]}
           onPress={onBack}
         >
           <Text style={styles.secondaryButtonText}>Back</Text>
         </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[styles.button, styles.primaryButton]} 
+
+        <TouchableOpacity
+          style={[styles.button, styles.primaryButton]}
           onPress={() => onImagesConfirm(images)}
         >
           {/* FIXED: Changed primaryButtonText to buttonText */}
           <Text style={styles.buttonText}>
-            {images.length > 0 ? `Continue with ${images.length} photos` : 'Skip Photos'}
+            {images.length > 0
+              ? `Continue with ${images.length} photos`
+              : "Skip Photos"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -108,28 +125,28 @@ const styles = StyleSheet.create({
     color: theme.Colors.background,
   },
   subtitleOnGradient: {
-    color: 'rgba(255,255,255,0.92)',
+    color: "rgba(255,255,255,0.92)",
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
+    color: "#666",
     marginBottom: 24,
   },
   imagesContainer: {
     flex: 1,
   },
   imagesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 12,
   },
   imageContainer: {
-    position: 'relative',
+    position: "relative",
     width: 100,
     height: 100,
   },
@@ -139,19 +156,19 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   removeButton: {
-    position: 'absolute',
+    position: "absolute",
     top: -8,
     right: -8,
     backgroundColor: theme.Colors.danger,
     width: 24,
     height: 24,
     borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   removeButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
+    color: "white",
+    fontWeight: "bold",
     fontSize: 16,
   },
   addButton: {
@@ -159,16 +176,16 @@ const styles = StyleSheet.create({
     height: 100,
     borderWidth: 2,
     borderColor: theme.Colors.primary,
-    borderStyle: 'dashed',
+    borderStyle: "dashed",
     borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     backgroundColor: theme.Colors.surface,
   },
   addButtonText: {
     fontSize: 24,
     color: theme.Colors.primary,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   addButtonLabel: {
     marginTop: 4,
@@ -176,7 +193,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   buttonContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
     marginTop: 24,
   },
@@ -184,22 +201,22 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     borderRadius: 12,
-    alignItems: 'center',
+    alignItems: "center",
   },
   primaryButton: {
     backgroundColor: theme.Colors.primary,
   },
   secondaryButton: {
-    backgroundColor: '#E5E5EA',
+    backgroundColor: "#E5E5EA",
   },
   // FIXED: Changed primaryButtonText to buttonText
   buttonText: {
-    color: '#fff',
-    fontWeight: '600',
+    color: "#fff",
+    fontWeight: "600",
   },
   secondaryButtonText: {
-    color: '#1C1C1E',
-    fontWeight: '600',
+    color: "#1C1C1E",
+    fontWeight: "600",
   },
 });
 

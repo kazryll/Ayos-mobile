@@ -1,9 +1,9 @@
 // screens/HomeScreen.tsx
 import { getNearbyReports } from "@/services/reports";
 import { getUserStats } from "@/services/userService";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { LinearGradient } from "expo-linear-gradient";
 import {
   ActivityIndicator,
   Alert,
@@ -16,8 +16,8 @@ import {
 } from "react-native";
 import BottomNav from "../components/BottomNav";
 import { auth } from "../config/firebase";
-import { getUserProfile } from "../services/auth";
 import theme from "../config/theme";
+import { getUserProfile } from "../services/auth";
 
 export default function HomeScreen() {
   const router = useRouter();

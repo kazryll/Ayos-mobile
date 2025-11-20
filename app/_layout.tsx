@@ -62,12 +62,20 @@ export default function Layout() {
         console.log("🔒 No user but already on signin/signup page");
       }
     } else {
-      // User exists - redirect to home if not already there
-      if (segments[0] !== "home") {
-        console.log("🚀 User found - redirecting to home");
+      // User exists - only redirect to home when on the root or auth pages
+      // This prevents forcing navigation back to /home when the user
+      // intentionally visits other screens like /activity, /profile, etc.
+      const firstSegment = segments[0];
+      const isOnAuthOrRoot =
+        firstSegment === undefined ||
+        firstSegment === "signin" ||
+        firstSegment === "signup";
+
+      if (isOnAuthOrRoot) {
+        console.log("🚀 User found - redirecting to home from root/auth");
         router.replace("/home");
       } else {
-        console.log("🚀 User found and already on home page");
+        console.log("🚀 User found - staying on current route:", firstSegment);
       }
     }
   }, [authLoading, user, segments]);

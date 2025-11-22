@@ -227,6 +227,16 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({
             </Text>
           </View>
 
+          {/* Barangay */}
+          {reportLocation?.barangay && (
+            <View style={styles.summaryItem}>
+              <Text style={styles.summaryLabel}>Barangay:</Text>
+              <Text style={styles.summaryValue}>
+                {reportLocation.barangay}
+              </Text>
+            </View>
+          )}
+
           {/* Confidence removed per design update */}
         </View>
       </View>

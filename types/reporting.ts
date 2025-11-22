@@ -35,6 +35,7 @@ export interface ReportData {
     latitude: number;
     longitude: number;
     address: string;
+    barangay?: string;
     city?: string;
     province?: string;
     country?: string;

@@ -140,6 +140,7 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
               address: reportLocation.address,
               latitude: reportLocation.latitude,
               longitude: reportLocation.longitude,
+              barangay: reportLocation.barangay || "",
               city: reportLocation.city || "",
               province: reportLocation.province || "",
               country: "Philippines",

@@ -1,15 +1,15 @@
 # Data Integrity & Single Source of Truth Audit
 
-**Project:** Ayos Mobile  
-**Date:** November 23, 2025  
+**Project:** Ayos Mobile
+**Date:** November 23, 2025
 **Audit Focus:** `types/reporting.ts` interface usage across components
 
 ---
 
 ## Executive Summary
 
-✅ **Overall Status:** GOOD - Single source of truth is enforced  
-⚠️ **Issues Found:** 3 minor inconsistencies requiring attention  
+✅ **Overall Status:** GOOD - Single source of truth is enforced
+⚠️ **Issues Found:** 3 minor inconsistencies requiring attention
 📊 **Components Analyzed:** 3 TypeScript files, 1 JavaScript service
 
 ---
@@ -17,9 +17,11 @@
 ## 1. Single Source of Truth Analysis
 
 ### ✅ PASSING: Type Definitions
+
 **File:** `types/reporting.ts`
 
 All components correctly import types from the centralized location:
+
 - `services/groqServices.ts` ✓
 - `components/IssueReportingWizard.tsx` ✓
 - `components/ReviewSubmitStep.tsx` ✓
@@ -35,6 +37,7 @@ All components correctly import types from the centralized location:
 **Problem:** `getAssignedDepartment()` function is duplicated in two files with different implementations.
 
 **Location 1:** `components/IssueReportingWizard.tsx` (Line 212)
+
 ```typescript
 const getAssignedDepartment = (category: IssueCategory): string => {
   const departmentMap = {
@@ -50,6 +53,7 @@ const getAssignedDepartment = (category: IssueCategory): string => {
 ```
 
 **Location 2:** `components/ReviewSubmitStep.tsx` (Line 84)
+
 ```typescript
 const getAssignedDepartment = (category?: string) => {
   if (!category) return "General";
@@ -67,29 +71,35 @@ const getAssignedDepartment = (category?: string) => {
 ```
 
 **Issues:**
+
 1. Different parameter types: `IssueCategory` enum vs `string`
 2. Different fallback values: "Appropriate Department" vs "General"
 3. Different null handling logic
 4. Code duplication violates DRY principle
 
-**Impact:** 
+**Impact:**
+
 - If department mapping changes, must update in 2 places
 - Risk of inconsistent department assignments
 - Harder to maintain
 
 **Recommendation:**
 Create a shared utility file:
+
 ```typescript
 // utils/reportHelpers.ts
 import { IssueCategory } from "../types/reporting";
 
-export const getAssignedDepartment = (category?: IssueCategory | string): string => {
+export const getAssignedDepartment = (
+  category?: IssueCategory | string
+): string => {
   if (!category) return "General Services Office";
-  
-  const categoryStr = typeof category === 'string' 
-    ? category.toLowerCase() 
-    : category.toLowerCase();
-    
+
+  const categoryStr =
+    typeof category === "string"
+      ? category.toLowerCase()
+      : category.toLowerCase();
+
   const departmentMap: { [key: string]: string } = {
     infrastructure: "DPWH - Roads Division",
     utilities: "Baguio City Utilities",
@@ -98,7 +108,7 @@ export const getAssignedDepartment = (category?: IssueCategory | string): string
     "social services": "Social Welfare Department",
     other: "General Services Office",
   };
-  
+
   return departmentMap[categoryStr] || "General Services Office";
 };
 ```
@@ -112,6 +122,7 @@ Then import from both components.
 **Problem:** `getPriorityColor()` function is duplicated in two files.
 
 **Location 1:** `components/IssueReportingWizard.tsx` (Line 185)
+
 ```typescript
 const getPriorityColor = (priority: IssuePriority): string => {
   switch (priority) {
@@ -128,6 +139,7 @@ const getPriorityColor = (priority: IssuePriority): string => {
 ```
 
 **Location 2:** `components/ReviewSubmitStep.tsx` (Line 71)
+
 ```typescript
 const getPriorityColor = (priority: string) => {
   switch (priority?.toLowerCase()) {
@@ -144,28 +156,32 @@ const getPriorityColor = (priority: string) => {
 ```
 
 **Issues:**
+
 1. Different parameter types: `IssuePriority` enum vs `string`
 2. One uses enum values, other uses `.toLowerCase()` string comparison
 3. Code duplication
 
 **Impact:**
+
 - If priority colors change, must update in 2 places
 - Inconsistent type handling
 
 **Recommendation:**
 Move to `utils/reportHelpers.ts` or `config/theme.ts`:
+
 ```typescript
 export const getPriorityColor = (priority: IssuePriority | string): string => {
-  const priorityStr = typeof priority === 'string' 
-    ? priority.toLowerCase() 
-    : priority.toLowerCase();
-    
+  const priorityStr =
+    typeof priority === "string"
+      ? priority.toLowerCase()
+      : priority.toLowerCase();
+
   const colorMap: { [key: string]: string } = {
     high: "#FF3B30",
     medium: "#FF9500",
     low: "#34C759",
   };
-  
+
   return colorMap[priorityStr] || "#8E8E93";
 };
 ```
@@ -179,6 +195,7 @@ export const getPriorityColor = (priority: IssuePriority | string): string => {
 **Location:** `services/groqServices.ts`
 
 **analyzeIssueWithAI() result (Line 64):**
+
 ```typescript
 const result: AIAnalysis = {
   category: mapToIssueCategory(parsedResponse.category),
@@ -187,24 +204,28 @@ const result: AIAnalysis = {
   priority: mapToIssuePriority(parsedResponse.priority),
   suggested_actions: parsedResponse.suggested_actions,
   keywords: parsedResponse.keywords || [],
-  location: parsedResponse.location || '',
-  urgency_assessment: parsedResponse.urgency_assessment || ''
+  location: parsedResponse.location || "",
+  urgency_assessment: parsedResponse.urgency_assessment || "",
   // ❌ title is missing!
   // ❌ department is missing!
 };
 ```
 
 **analyzeWithGemini() result (Line 165):**
+
 ```typescript
 const result: AIAnalysis = {
-  category: mapToIssueCategory(parsedResponse.category || 'other'),
-  subcategory: parsedResponse.subcategory || 'General issue',
+  category: mapToIssueCategory(parsedResponse.category || "other"),
+  subcategory: parsedResponse.subcategory || "General issue",
   summary: parsedResponse.summary || userDescription.substring(0, 100),
-  priority: mapToIssuePriority(parsedResponse.priority || 'medium'),
-  suggested_actions: parsedResponse.suggested_actions || ['Review the issue', 'Contact relevant department'],
+  priority: mapToIssuePriority(parsedResponse.priority || "medium"),
+  suggested_actions: parsedResponse.suggested_actions || [
+    "Review the issue",
+    "Contact relevant department",
+  ],
   keywords: parsedResponse.keywords || [],
-  location: parsedResponse.location || '',
-  urgency_assessment: parsedResponse.urgency_assessment || 'Needs assessment'
+  location: parsedResponse.location || "",
+  urgency_assessment: parsedResponse.urgency_assessment || "Needs assessment",
   // ❌ title is missing!
   // ❌ department is missing!
 };
@@ -212,6 +233,7 @@ const result: AIAnalysis = {
 
 **Current Workaround:**
 Title is generated separately and merged in `IssueReportingWizard.tsx`:
+
 ```typescript
 const analysis = await analyzeIssueWithAI(userDescription);
 const title = await generateReportTitle(analysis.summary);
@@ -220,14 +242,17 @@ setAiAnalysis(analysisWithTitle);
 ```
 
 **Impact:**
+
 - TypeScript allows optional fields to be omitted ✓
 - However, creates confusion about data completeness
 - `department` field is never populated by AI, only computed later
 
 **Recommendation:**
 Either:
+
 1. Make `title` and `department` explicitly optional and document they're computed fields, OR
 2. Initialize them in the AI service functions:
+
 ```typescript
 const result: AIAnalysis = {
   // ... other fields
@@ -243,16 +268,19 @@ const result: AIAnalysis = {
 ### ✅ PASSING: AIAnalysis Field Usage
 
 **Category Field:**
+
 - ✓ Type-safe enum `IssueCategory` used consistently
 - ✓ Mapped from string in AI responses via `mapToIssueCategory()`
 - ✓ Fallback: `IssueCategory.OTHER`
 
 **Priority Field:**
+
 - ✓ Type-safe enum `IssuePriority` used consistently
 - ✓ Mapped from string in AI responses via `mapToIssuePriority()`
 - ✓ Fallback: `IssuePriority.MEDIUM`
 
 **Optional Fields:**
+
 - ✓ All optional fields have proper fallbacks
 - ✓ Optional chaining used: `aiAnalysis?.field`
 - ✓ Default values provided: `|| []` for arrays, `|| ''` for strings
@@ -285,6 +313,7 @@ const reportData = {
 ```
 
 **Observations:**
+
 - ✓ All `AIAnalysis` fields accessed with optional chaining
 - ✓ Sensible fallback values for each field
 - ✓ Complete `aiAnalysis` object stored for reference
@@ -300,9 +329,13 @@ const reportData = {
 **Status:** ⚠️ Weak typing (JavaScript file)
 
 ```javascript
-export const submitReport = async (reportData, userId = null, userEmail = null) => {
+export const submitReport = async (
+  reportData,
+  userId = null,
+  userEmail = null
+) => {
   const { images, ...otherData } = reportData;
-  
+
   const baseReportData = {
     ...otherData, // ⚠️ Untyped spread - no schema validation
     createdAt: serverTimestamp(),
@@ -316,25 +349,28 @@ export const submitReport = async (reportData, userId = null, userEmail = null) 
 ```
 
 **Issues:**
+
 - No TypeScript interface enforcement
 - Firebase accepts any object structure
 - No runtime validation of required fields
 - Potential for data inconsistency if `reportData` structure changes
 
 **Recommendation:**
+
 1. Convert `reports.js` to `reports.ts`
 2. Add type annotation:
+
 ```typescript
 import { ReportData } from "../types/reporting";
 
 export const submitReport = async (
-  reportData: ReportData & { 
+  reportData: ReportData & {
     title: string;
     category: string;
     priority: string;
     // ... other required fields
-  }, 
-  userId?: string | null, 
+  },
+  userId?: string | null,
   userEmail?: string | null
 ): Promise<string> => {
   // ...
@@ -352,20 +388,33 @@ export const submitReport = async (
 All displayed fields properly access `aiAnalysis`:
 
 ```tsx
-{/* Category */}
-<Text>{aiAnalysis?.category || "Not specified"}</Text>
+{
+  /* Category */
+}
+<Text>{aiAnalysis?.category || "Not specified"}</Text>;
 
-{/* Priority */}
-<Text>{aiAnalysis?.priority ? String(aiAnalysis.priority).toUpperCase() : "Not specified"}</Text>
+{
+  /* Priority */
+}
+<Text>
+  {aiAnalysis?.priority
+    ? String(aiAnalysis.priority).toUpperCase()
+    : "Not specified"}
+</Text>;
 
-{/* Title */}
-<Text>{aiAnalysis?.title || "Not specified"}</Text>
+{
+  /* Title */
+}
+<Text>{aiAnalysis?.title || "Not specified"}</Text>;
 
-{/* Location */}
-<Text>{reportLocation?.address || "234, Bonifacio Street, Baguio City"}</Text>
+{
+  /* Location */
+}
+<Text>{reportLocation?.address || "234, Bonifacio Street, Baguio City"}</Text>;
 ```
 
 **Observations:**
+
 - ✓ Consistent use of optional chaining
 - ✓ Consistent fallback: "Not specified"
 - ✓ Type safety maintained (accessing typed interface)
@@ -376,12 +425,14 @@ All displayed fields properly access `aiAnalysis`:
 ## Summary of Findings
 
 ### ✅ Strengths
+
 1. **Single source of truth enforced** - All components import from `types/reporting.ts`
 2. **Type safety** - TypeScript enums and interfaces used correctly
 3. **Consistent fallback patterns** - Optional chaining and default values used throughout
 4. **Data preservation** - Full `aiAnalysis` object stored alongside extracted fields
 
 ### ⚠️ Weaknesses
+
 1. **Code duplication** - `getAssignedDepartment()` and `getPriorityColor()` duplicated
 2. **Incomplete AI results** - `title` and `department` not populated in AI service layer
 3. **Weak Firebase typing** - JavaScript file with no schema validation
@@ -392,14 +443,17 @@ All displayed fields properly access `aiAnalysis`:
 ## Recommended Actions
 
 ### HIGH PRIORITY
+
 1. ✅ Create `utils/reportHelpers.ts` to centralize helper functions
 2. ✅ Type-safe the Firebase service layer (`reports.js` → `reports.ts`)
 
 ### MEDIUM PRIORITY
+
 3. ✅ Document which fields are computed vs AI-generated in interface comments
 4. ✅ Standardize function signatures to accept both enum and string types
 
 ### LOW PRIORITY
+
 5. ✅ Extract magic strings (department names, colors) to constants
 6. ✅ Add runtime validation for critical fields before Firebase submission
 
@@ -420,11 +474,12 @@ export const getAssignedDepartment = (
   category?: IssueCategory | string
 ): string => {
   if (!category) return "General Services Office";
-  
-  const categoryStr = typeof category === 'string' 
-    ? category.toLowerCase() 
-    : category.toLowerCase();
-    
+
+  const categoryStr =
+    typeof category === "string"
+      ? category.toLowerCase()
+      : category.toLowerCase();
+
   const departmentMap: Record<string, string> = {
     infrastructure: "DPWH - Roads Division",
     utilities: "Baguio City Utilities",
@@ -433,7 +488,7 @@ export const getAssignedDepartment = (
     "social services": "Social Welfare Department",
     other: "General Services Office",
   };
-  
+
   return departmentMap[categoryStr] || "General Services Office";
 };
 
@@ -442,21 +497,20 @@ export const getAssignedDepartment = (
  * @param priority - IssuePriority enum or string representation
  * @returns Hex color code
  */
-export const getPriorityColor = (
-  priority?: IssuePriority | string
-): string => {
+export const getPriorityColor = (priority?: IssuePriority | string): string => {
   if (!priority) return "#8E8E93";
-  
-  const priorityStr = typeof priority === 'string' 
-    ? priority.toLowerCase() 
-    : priority.toLowerCase();
-    
+
+  const priorityStr =
+    typeof priority === "string"
+      ? priority.toLowerCase()
+      : priority.toLowerCase();
+
   const colorMap: Record<string, string> = {
     high: "#FF3B30",
     medium: "#FF9500",
     low: "#34C759",
   };
-  
+
   return colorMap[priorityStr] || "#8E8E93";
 };
 
@@ -465,9 +519,7 @@ export const getPriorityColor = (
  * @param priority - IssuePriority enum
  * @returns Urgency description
  */
-export const getUrgencyAssessment = (
-  priority: IssuePriority
-): string => {
+export const getUrgencyAssessment = (priority: IssuePriority): string => {
   switch (priority) {
     case IssuePriority.HIGH:
       return "Requires immediate attention";
@@ -482,11 +534,12 @@ export const getUrgencyAssessment = (
 ```
 
 **Then update imports in both components:**
+
 ```typescript
-import { 
-  getAssignedDepartment, 
-  getPriorityColor, 
-  getUrgencyAssessment 
+import {
+  getAssignedDepartment,
+  getPriorityColor,
+  getUrgencyAssessment,
 } from "../utils/reportHelpers";
 ```
 

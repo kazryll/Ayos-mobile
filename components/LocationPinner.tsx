@@ -3,13 +3,13 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as Location from "expo-location";
 import React, { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import theme from "../config/theme";
 import barangayBoundaries from "../data/baguioBarangayBoundaries.json";
@@ -164,7 +164,7 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({
       console.log("📍 Location data set:", locationData);
       setCurrentLocation(locationData);
       setSelectedLocation(locationData);
-      
+
       // Set initial map center only once
       if (!mapCenter) {
         setMapCenter({ lat, lng });
@@ -521,7 +521,7 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({
                     {showBoundaries && barangayBoundaries.map((barangay) => {
                       // Extract coordinates from the GeoJSON structure
                       const coordinates = barangay.boundingBox.coordinates;
-                      
+
                       // Convert to Google Maps format [lat, lng]
                       const paths = coordinates.map((coord: number[]) => ({
                         lat: coord[1],

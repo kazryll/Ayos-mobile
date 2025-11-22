@@ -1,6 +1,6 @@
 /**
  * Baguio City Barangay Boundary Utilities
- * 
+ *
  * This module provides functions to determine which barangay a given coordinate belongs to
  * using point-in-polygon algorithms with actual barangay boundary data.
  */
@@ -21,7 +21,7 @@ export interface BarangayBoundary {
 /**
  * Point-in-Polygon algorithm using ray-casting
  * Determines if a point (lng, lat) is inside a polygon defined by coordinates
- * 
+ *
  * @param point - [longitude, latitude] of the point to check
  * @param polygon - Array of [longitude, latitude] pairs defining the polygon
  * @returns true if point is inside polygon, false otherwise
@@ -49,7 +49,7 @@ export function isPointInPolygon(
 /**
  * Calculates the distance between two points using Haversine formula
  * Used as fallback when point is not within any polygon
- * 
+ *
  * @param point1 - [longitude, latitude]
  * @param point2 - [longitude, latitude]
  * @returns distance in kilometers
@@ -78,7 +78,7 @@ export function haversineDistance(
 
 /**
  * Finds which barangay a given coordinate belongs to
- * 
+ *
  * @param longitude - Longitude of the point
  * @param latitude - Latitude of the point
  * @param boundaries - Array of barangay boundary data
@@ -101,13 +101,13 @@ export function findBarangayByCoordinates(
 
   // Second pass: Find nearest barangay center as fallback
   console.log('⚠️ Point not inside any polygon, finding nearest barangay...');
-  
+
   let nearestBarangay: string | null = null;
   let minDistance = Infinity;
 
   for (const barangay of boundaries) {
     const distance = haversineDistance(point, barangay.coords.coordinates);
-    
+
     if (distance < minDistance) {
       minDistance = distance;
       nearestBarangay = barangay.name;

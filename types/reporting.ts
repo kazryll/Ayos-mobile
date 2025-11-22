@@ -18,6 +18,7 @@ export interface AIAnalysis {
   category: IssueCategory;
   subcategory: string;
   summary: string;
+  title?: string;
   department?: string;
   priority: IssuePriority;
   suggested_actions: string[];

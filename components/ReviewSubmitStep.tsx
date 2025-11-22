@@ -209,7 +209,7 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({
           <View style={styles.summaryItem}>
             <Text style={styles.summaryLabel}>Title:</Text>
             <Text style={styles.summaryValue}>
-              {aiAnalysis?.summary || "Not specified"}
+              {aiAnalysis?.title || "Not specified"}
             </Text>
           </View>
 

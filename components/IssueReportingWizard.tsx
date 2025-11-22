@@ -42,6 +42,7 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
   );
   const [userDescription, setUserDescription] = useState<string>("");
   const [aiAnalysis, setAiAnalysis] = useState<AIAnalysis | null>(null);
+  const [generatedTitle, setGeneratedTitle] = useState<string>("");
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [reportLocation, setReportLocation] = useState<
     ReportData["location"] | null
@@ -95,7 +96,15 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
 
     try {
       const analysis = await analyzeIssueWithAI(userDescription);
-      setAiAnalysis(analysis);
+      
+      // Generate title immediately after analysis
+      const title = await generateReportTitle(analysis.summary);
+      setGeneratedTitle(title);
+      
+      // Store title in aiAnalysis
+      const analysisWithTitle = { ...analysis, title };
+      setAiAnalysis(analysisWithTitle);
+      
       setCurrentStep(WizardStep.ADD_LOCATION); // Automatically move to Step 2 (Location)
     } catch (error) {
       Alert.alert(
@@ -114,13 +123,8 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
     setIsSubmitting(true);
 
     try {
-      // Generate AI title from summary
-      const generatedTitle = aiAnalysis?.summary
-        ? await generateReportTitle(aiAnalysis.summary)
-        : userDescription.substring(0, 50) || "Issue Report";
-
       const reportData = {
-        title: generatedTitle,
+        title: aiAnalysis?.title || userDescription.substring(0, 50) || "Issue Report",
         description: userDescription,
         category: aiAnalysis?.category || "other",
         subcategory: aiAnalysis?.subcategory || "",

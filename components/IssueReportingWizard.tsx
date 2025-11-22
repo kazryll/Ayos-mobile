@@ -4,28 +4,28 @@ import { LinearGradient } from "expo-linear-gradient";
 import { onAuthStateChanged } from "firebase/auth";
 import React, { JSX, useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Animated,
-  Easing,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Animated,
+    Easing,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { auth } from "../config/firebase";
 import theme from "../config/theme";
-import { analyzeIssueWithAI } from "../services/groqServices";
+import { analyzeIssueWithAI, generateReportTitle } from "../services/groqServices";
 import { submitReport } from "../services/reports";
 import {
-  AIAnalysis,
-  IssueCategory,
-  IssuePriority,
-  ReportData,
-  WizardStep,
+    AIAnalysis,
+    IssueCategory,
+    IssuePriority,
+    ReportData,
+    WizardStep,
 } from "../types/reporting";
 import LocationPinner from "./LocationPinner";
 import ReviewSubmitStep from "./ReviewSubmitStep";
@@ -114,11 +114,13 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
     setIsSubmitting(true);
 
     try {
+      // Generate AI title from summary
+      const generatedTitle = aiAnalysis?.summary
+        ? await generateReportTitle(aiAnalysis.summary)
+        : userDescription.substring(0, 50) || "Issue Report";
+
       const reportData = {
-        title:
-          aiAnalysis?.summary ||
-          userDescription.substring(0, 50) ||
-          "Issue Report", // ADD TITLE
+        title: generatedTitle,
         description: userDescription,
         category: aiAnalysis?.category || "other",
         subcategory: aiAnalysis?.subcategory || "",

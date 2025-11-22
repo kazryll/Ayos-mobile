@@ -1,12 +1,18 @@
-// app/index.tsx - CLEAN VERSION
-import { StyleSheet, Text, View } from 'react-native';
+// app/index.tsx
 import { Redirect } from 'expo-router';
-import { auth, db } from '../config/firebase';
+import { useEffect } from 'react';
 
-console.log('Firebase initialized successfully!');
-console.log('Auth:', auth);
-console.log('DB:', db);
+export default function Index() {
+  useEffect(() => {
+    // Initialize Firebase lazily to avoid blocking initial render
+    import('../config/firebase')
+      .then(({ auth, db }) => {
+        console.log('✅ Firebase initialized successfully!');
+      })
+      .catch((error) => {
+        console.error('❌ Firebase initialization error:', error);
+      });
+  }, []);
 
-export default function Index() {  
   return <Redirect href="/splash" />;
 }

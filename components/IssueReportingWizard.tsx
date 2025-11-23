@@ -22,10 +22,8 @@ import { analyzeIssueWithAI, generateReportTitle } from "../services/groqService
 import { submitReport } from "../services/reports";
 import {
     AIAnalysis,
-    IssueCategory,
     IssuePriority,
-    ReportData,
-    WizardStep,
+    WizardStep
 } from "../types/reporting";
 import LocationPinner from "./LocationPinner";
 import ReviewSubmitStep from "./ReviewSubmitStep";
@@ -44,9 +42,14 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
   const [aiAnalysis, setAiAnalysis] = useState<AIAnalysis | null>(null);
   const [generatedTitle, setGeneratedTitle] = useState<string>("");
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
-  const [reportLocation, setReportLocation] = useState<
-    ReportData["location"] | null
-  >(null);
+  const [reportLocation, setReportLocation] = useState<{
+    latitude: number;
+    longitude: number;
+    address: string;
+    city?: string;
+    province?: string;
+    barangay?: string;
+  } | null>(null);
   const [reportImages, setReportImages] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -124,40 +127,32 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
 
     try {
       const reportData = {
-        title: aiAnalysis?.title || userDescription.substring(0, 50) || "Issue Report",
         description: userDescription,
-        category: aiAnalysis?.category || "other",
-        subcategory: aiAnalysis?.subcategory || "",
-        priority: aiAnalysis?.priority || "medium",
-        keywords: aiAnalysis?.keywords || [],
-        suggested_actions: aiAnalysis?.suggested_actions || [],
-        urgency_assessment: getUrgencyAssessment(
-          aiAnalysis?.priority || IssuePriority.MEDIUM
-        ),
         aiAnalysis: aiAnalysis,
         location: reportLocation
           ? {
               address: reportLocation.address,
               latitude: reportLocation.latitude,
               longitude: reportLocation.longitude,
-              barangay: reportLocation.barangay || "",
-              city: reportLocation.city || "",
-              province: reportLocation.province || "",
-              country: "Philippines",
+              barangay: reportLocation.barangay || "Unknown",
+              city: reportLocation.city || "Unknown",
+              province: reportLocation.province || "Unknown",
             }
-          : null,
-        images: images.length > 0 ? images : null,
-        submittedAnonymously: submittedAnonymously,
-        department: aiAnalysis
-          ? getAssignedDepartment(aiAnalysis.category)
-          : "General",
-        status: "submitted",
+          : {
+              address: "Unknown",
+              latitude: 0,
+              longitude: 0,
+              barangay: "Unknown",
+              city: "Unknown",
+              province: "Unknown",
+            },
+        images: images.length > 0 ? images : [],
       };
 
       console.log("📤 Submitting report with data:", {
-        title: reportData.title,
-        location: reportData.location?.address,
-        category: reportData.category,
+        title: aiAnalysis?.title,
+        location: reportData.location.address,
+        category: aiAnalysis?.category,
       });
 
       const reportId = await submitReport(
@@ -209,31 +204,7 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
     }
   };
 
-  // Add these two functions AFTER getPriorityText
-  const getAssignedDepartment = (category: IssueCategory): string => {
-    const departmentMap = {
-      [IssueCategory.INFRASTRUCTURE]: "DPWH - Roads Division",
-      [IssueCategory.UTILITIES]: "Baguio City Utilities",
-      [IssueCategory.ENVIRONMENT]: "City Environment Office",
-      [IssueCategory.PUBLIC_SAFETY]: "Public Safety Division",
-      [IssueCategory.SOCIAL_SERVICES]: "Social Welfare Department",
-      [IssueCategory.OTHER]: "General Services Office",
-    };
-    return departmentMap[category] || "Appropriate Department";
-  };
 
-  const getUrgencyAssessment = (priority: IssuePriority): string => {
-    switch (priority) {
-      case IssuePriority.HIGH:
-        return "Requires immediate attention";
-      case IssuePriority.MEDIUM:
-        return "Should be addressed within days";
-      case IssuePriority.LOW:
-        return "Can be scheduled for regular maintenance";
-      default:
-        return "Needs assessment";
-    }
-  };
 
   const renderStepContent = (): JSX.Element => {
     switch (currentStep) {

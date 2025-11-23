@@ -9,14 +9,10 @@ const GEMINI_API_KEY = ENV.GEMINI_API_KEY || '';
 const SYSTEM_PROMPT = `You are an AI assistant for AYOS, a citizen reporting app in the Philippines.
 Analyze the user's description and return ONLY valid JSON with this exact structure:
 {
-  "category": "infrastructure/utilities/environment/public safety/social services/other",
-  "subcategory": "specific issue type",
-  "summary": "brief summary",
-  "priority": "low/medium/high",
-  "suggested_actions": ["action1", "action2", "action3"],
-  "keywords": ["keyword1", "keyword2", "keyword3"],
-  "location": "extracted location or area",
-  "urgency_assessment": "brief urgency description"
+  "title": "brief descriptive title (max 10 words)",
+  "summary": "detailed summary of the issue",
+  "category": "Infrastructure/Utilities/Environment/Public Safety/Social Services/Other",
+  "priority": "low/medium/high/urgent"
 }
 
 Return ONLY the JSON object, no other text.`;
@@ -63,14 +59,10 @@ export const analyzeIssueWithAI = async (userDescription: string): Promise<AIAna
     const parsedResponse = JSON.parse(content);
 
     const result: AIAnalysis = {
-      category: mapToIssueCategory(parsedResponse.category),
-      subcategory: parsedResponse.subcategory,
+      title: parsedResponse.title || 'Untitled Report',
       summary: parsedResponse.summary,
-      priority: mapToIssuePriority(parsedResponse.priority),
-      suggested_actions: parsedResponse.suggested_actions,
-      keywords: parsedResponse.keywords || [],
-      location: parsedResponse.location || '',
-      urgency_assessment: parsedResponse.urgency_assessment || ''
+      category: mapToIssueCategory(parsedResponse.category),
+      priority: mapToIssuePriority(parsedResponse.priority)
     };
 
     console.log('🎯 Final analysis result:', result);
@@ -164,14 +156,10 @@ const analyzeWithGemini = async (userDescription: string): Promise<AIAnalysis> =
   }
 
   const result: AIAnalysis = {
-    category: mapToIssueCategory(parsedResponse.category || 'other'),
-    subcategory: parsedResponse.subcategory || 'General issue',
+    title: parsedResponse.title || 'Untitled Report',
     summary: parsedResponse.summary || userDescription.substring(0, 100),
-    priority: mapToIssuePriority(parsedResponse.priority || 'medium'),
-    suggested_actions: parsedResponse.suggested_actions || ['Review the issue', 'Contact relevant department'],
-    keywords: parsedResponse.keywords || [],
-    location: parsedResponse.location || '',
-    urgency_assessment: parsedResponse.urgency_assessment || 'Needs assessment'
+    category: mapToIssueCategory(parsedResponse.category || 'other'),
+    priority: mapToIssuePriority(parsedResponse.priority || 'medium')
   };
 
   console.log('🎯 Final Gemini analysis result:', result);

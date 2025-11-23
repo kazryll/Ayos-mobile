@@ -15,33 +15,30 @@ export enum IssueCategory {
 }
 
 export interface AIAnalysis {
-  category: IssueCategory;
-  subcategory: string;
+  title: string;
   summary: string;
-  title?: string;
-  department?: string;
+  category: IssueCategory;
   priority: IssuePriority;
-  suggested_actions: string[];
-  keywords: string[];
-  location: string;
-  urgency_assessment: string;
 }
 
 export interface ReportData {
-  description: string;
-  aiAnalysis: AIAnalysis | null;
-  timestamp: string;
-  location?: {
+  originalDescription: string;
+  reportedBy: string;
+  assignedTo?: string;
+  createdAt: any; // Firestore Timestamp
+  status: "pending" | "in_progress" | "resolved" | "closed" | "rejected";
+  location: {
     latitude: number;
     longitude: number;
     address: string;
-    barangay?: string;
-    city?: string;
-    province?: string;
-    country?: string;
-    manualPin?: boolean;
+    barangay: string;
+    city: string;
+    province: string;
   };
-  images?: string[]; // Base64 or URLs
+  images: string[]; // URLs to Firebase Storage
+  aiGeneratedAnalysis: AIAnalysis;
+  submittedAnonymously?: boolean;
+  userEmail?: string;
 }
 
 export enum WizardStep {

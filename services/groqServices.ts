@@ -2,8 +2,9 @@
 import { ENV } from "../config/env";
 import { AIAnalysis, IssueCategory, IssuePriority } from "../types/reporting";
 
-const GROQ_API_KEY = "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";
-const GEMINI_API_KEY = ENV.GEMINI_API_KEY;
+// Read API keys from environment config. Avoid hardcoding secrets in the repo.
+const GROQ_API_KEY = ENV.GROQ_API_KEY || '';
+const GEMINI_API_KEY = ENV.GEMINI_API_KEY || '';
 
 const SYSTEM_PROMPT = `You are an AI assistant for AYOS, a citizen reporting app in the Philippines.
 Analyze the user's description and return ONLY valid JSON with this exact structure:

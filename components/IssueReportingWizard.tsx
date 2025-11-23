@@ -157,8 +157,7 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
 
       const reportId = await submitReport(
         reportData,
-        currentUser?.uid,
-        currentUser?.email
+        currentUser?.uid
       );
 
       console.log("✅ Report submitted successfully with ID:", reportId);

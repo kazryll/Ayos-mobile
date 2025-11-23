@@ -1,17 +1,19 @@
-import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
+import { GoogleMap, LoadScript, Marker, Polygon } from "@react-google-maps/api";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Location from "expo-location";
 import React, { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import theme from "../config/theme";
+import barangayBoundaries from "../data/baguioBarangayBoundaries.json";
+import { findBarangayByCoordinates, isWithinBaguioCity, type BarangayBoundary } from "../utils/barangayUtils";
 
 interface LocationPinnerProps {
   onLocationConfirm: (location: {
@@ -20,6 +22,7 @@ interface LocationPinnerProps {
     address: string;
     city?: string;
     province?: string;
+    barangay?: string;
   }) => void;
   onBack: () => void;
 }
@@ -46,6 +49,7 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({
     address: string;
     city?: string;
     province?: string;
+    barangay?: string;
   } | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<{
     latitude: number;
@@ -53,6 +57,7 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({
     address: string;
     city?: string;
     province?: string;
+    barangay?: string;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [mapLoading, setMapLoading] = useState(true);
@@ -60,6 +65,8 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({
   const [scriptError, setScriptError] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isGeocodingAddress, setIsGeocodingAddress] = useState(false);
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
+  const [showBoundaries, setShowBoundaries] = useState(false);
 
   const mapRef = useRef<google.maps.Map | null>(null);
   const markerRef = useRef<google.maps.Marker | null>(null);
@@ -105,6 +112,7 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({
       let address = "";
       let city = "";
       let province = "";
+      let barangay = "";
 
       if (data.results && data.results.length > 0) {
         const result = data.results[0];
@@ -122,9 +130,26 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({
           }
         }
 
-        console.log("✅ Extracted:", { address, city, province });
+        console.log("✅ Extracted from Google:", { address, city, province });
       } else {
         address = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+      }
+
+      // Determine barangay using boundary data
+      if (isWithinBaguioCity(lng, lat)) {
+        const detectedBarangay = findBarangayByCoordinates(
+          lng,
+          lat,
+          barangayBoundaries as BarangayBoundary[]
+        );
+        if (detectedBarangay) {
+          barangay = detectedBarangay;
+          console.log("✅ Barangay detected from boundaries:", barangay);
+        } else {
+          console.log("⚠️ Could not determine barangay from boundaries");
+        }
+      } else {
+        console.log("⚠️ Location outside Baguio City bounds");
       }
 
       const locationData = {
@@ -133,11 +158,17 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({
         address,
         city,
         province,
+        barangay,
       };
 
       console.log("📍 Location data set:", locationData);
       setCurrentLocation(locationData);
       setSelectedLocation(locationData);
+
+      // Set initial map center only once
+      if (!mapCenter) {
+        setMapCenter({ lat, lng });
+      }
     } catch (error) {
       console.error("📍 Location error:", error);
       setError(
@@ -241,6 +272,7 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({
         let address = result.formatted_address;
         let city = "";
         let province = "";
+        let barangay = "";
 
         // Parse address components to get city and province
         for (const component of result.address_components) {
@@ -254,7 +286,24 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({
           }
         }
 
-        console.log("✅ Extracted:", { address, city, province });
+        console.log("✅ Extracted from Google:", { address, city, province });
+
+        // Determine barangay using boundary data
+        if (isWithinBaguioCity(lng, lat)) {
+          const detectedBarangay = findBarangayByCoordinates(
+            lng,
+            lat,
+            barangayBoundaries as BarangayBoundary[]
+          );
+          if (detectedBarangay) {
+            barangay = detectedBarangay;
+            console.log("✅ Barangay detected from boundaries:", barangay);
+          } else {
+            console.log("⚠️ Could not determine barangay from boundaries");
+          }
+        } else {
+          console.log("⚠️ Location outside Baguio City bounds");
+        }
 
         // Update selected location with full address info
         setSelectedLocation((prev) =>
@@ -264,6 +313,7 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({
                 address,
                 city,
                 province,
+                barangay,
               }
             : null
         );
@@ -305,6 +355,18 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({
   const useCurrentLocation = () => {
     if (currentLocation) {
       setSelectedLocation(currentLocation);
+      // Recenter map to current location
+      setMapCenter({
+        lat: currentLocation.latitude,
+        lng: currentLocation.longitude,
+      });
+      // Pan the map if mapRef is available
+      if (mapRef.current) {
+        mapRef.current.panTo({
+          lat: currentLocation.latitude,
+          lng: currentLocation.longitude,
+        });
+      }
     }
   };
 
@@ -441,16 +503,12 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({
                 {scriptLoaded ? (
                   <GoogleMap
                     mapContainerStyle={mapContainerStyle}
-                    center={
-                      currentLocation
-                        ? {
-                            lat: currentLocation.latitude,
-                            lng: currentLocation.longitude,
-                          }
-                        : defaultCenter
-                    }
+                    center={mapCenter || defaultCenter}
                     zoom={15}
                     onClick={handleMapClick}
+                    onLoad={(map) => {
+                      mapRef.current = map;
+                    }}
                     options={{
                       streetViewControl: false,
                       mapTypeControl: false,
@@ -459,6 +517,33 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({
                       gestureHandling: "greedy",
                     }}
                   >
+                    {/* Barangay Boundaries */}
+                    {showBoundaries && barangayBoundaries.map((barangay) => {
+                      // Extract coordinates from the GeoJSON structure
+                      const coordinates = barangay.boundingBox.coordinates;
+
+                      // Convert to Google Maps format [lat, lng]
+                      const paths = coordinates.map((coord: number[]) => ({
+                        lat: coord[1],
+                        lng: coord[0],
+                      }));
+
+                      return (
+                        <Polygon
+                          key={barangay.name}
+                          paths={paths}
+                          options={{
+                            fillColor: "#4285F4",
+                            fillOpacity: 0.1,
+                            strokeColor: "#4285F4",
+                            strokeOpacity: 0.6,
+                            strokeWeight: 2,
+                            clickable: false,
+                          }}
+                        />
+                      );
+                    })}
+
                     {/* Marker for selected location */}
                     {selectedLocation && (
                       <Marker
@@ -474,14 +559,25 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({
                 )}
               </LoadScript>
 
-              <TouchableOpacity
-                style={styles.useCurrentLocationButton}
-                onPress={useCurrentLocation}
-              >
-                <Text style={styles.useCurrentLocationText}>
-                  Use My Current Location
-                </Text>
-              </TouchableOpacity>
+              <View style={styles.mapButtonsContainer}>
+                <TouchableOpacity
+                  style={styles.useCurrentLocationButton}
+                  onPress={useCurrentLocation}
+                >
+                  <Text style={styles.useCurrentLocationText}>
+                    Use My Current Location
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.toggleBoundariesButton}
+                  onPress={() => setShowBoundaries(!showBoundaries)}
+                >
+                  <Text style={styles.toggleBoundariesText}>
+                    {showBoundaries ? "Hide" : "Show"} Boundaries
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             {/* Selected Location Display */}
@@ -493,6 +589,11 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({
                 <Text style={styles.selectedLocationAddress}>
                   {selectedLocation.address}
                 </Text>
+                {selectedLocation.barangay && (
+                  <Text style={styles.selectedLocationBarangay}>
+                    📍 Barangay: {selectedLocation.barangay}
+                  </Text>
+                )}
                 {(selectedLocation.city || selectedLocation.province) && (
                   <Text style={styles.selectedLocationCity}>
                     {[selectedLocation.city, selectedLocation.province]
@@ -616,14 +717,31 @@ const styles = StyleSheet.create({
     marginTop: 12,
     color: "#666",
   },
-  useCurrentLocationButton: {
-    padding: 12,
+  mapButtonsContainer: {
+    flexDirection: "row",
     backgroundColor: theme.Colors.surface,
-    alignItems: "center",
     borderTopWidth: 1,
     borderTopColor: theme.Colors.divider,
   },
+  useCurrentLocationButton: {
+    flex: 1,
+    padding: 12,
+    backgroundColor: theme.Colors.surface,
+    alignItems: "center",
+    borderRightWidth: 1,
+    borderRightColor: theme.Colors.divider,
+  },
   useCurrentLocationText: {
+    color: theme.Colors.primary,
+    fontWeight: "600",
+  },
+  toggleBoundariesButton: {
+    flex: 1,
+    padding: 12,
+    backgroundColor: theme.Colors.surface,
+    alignItems: "center",
+  },
+  toggleBoundariesText: {
     color: theme.Colors.primary,
     fontWeight: "600",
   },
@@ -644,6 +762,13 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     marginBottom: 4,
     color: theme.Colors.text,
+  },
+  selectedLocationBarangay: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: theme.Colors.primary,
+    marginBottom: 6,
+    marginTop: 4,
   },
   selectedLocationCity: {
     fontSize: 14,

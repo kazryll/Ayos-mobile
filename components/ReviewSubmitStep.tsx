@@ -2,14 +2,14 @@ import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useState } from "react";
 import {
-  Alert,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import theme from "../config/theme";
 import { AIAnalysis } from "../types/reporting";
@@ -226,6 +226,16 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({
               {reportLocation?.address || "234, Bonifacio Street, Baguio City"}
             </Text>
           </View>
+
+          {/* Barangay */}
+          {reportLocation?.barangay && (
+            <View style={styles.summaryItem}>
+              <Text style={styles.summaryLabel}>Barangay:</Text>
+              <Text style={styles.summaryValue}>
+                {reportLocation.barangay}
+              </Text>
+            </View>
+          )}
 
           {/* Confidence removed per design update */}
         </View>

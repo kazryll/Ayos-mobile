@@ -96,15 +96,15 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
 
     try {
       const analysis = await analyzeIssueWithAI(userDescription);
-      
+
       // Generate title immediately after analysis
       const title = await generateReportTitle(analysis.summary);
       setGeneratedTitle(title);
-      
+
       // Store title in aiAnalysis
       const analysisWithTitle = { ...analysis, title };
       setAiAnalysis(analysisWithTitle);
-      
+
       setCurrentStep(WizardStep.ADD_LOCATION); // Automatically move to Step 2 (Location)
     } catch (error) {
       Alert.alert(
@@ -140,6 +140,7 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
               address: reportLocation.address,
               latitude: reportLocation.latitude,
               longitude: reportLocation.longitude,
+              barangay: reportLocation.barangay || "",
               city: reportLocation.city || "",
               province: reportLocation.province || "",
               country: "Philippines",

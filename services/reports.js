@@ -7,8 +7,10 @@ import {
     serverTimestamp,
     where
 } from "firebase/firestore";
-import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage"; // ADD THIS
+import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
 import { db } from "../config/firebase";
+import barangayBoundaries from "../data/baguioBarangayBoundaries.json";
+import { findBarangayByCoordinates } from "../utils/barangayUtils";
 
 // INITIALIZE STORAGE
 const storage = getStorage();
@@ -85,12 +87,29 @@ export const submitReport = async (reportData, userId = null) => {
       console.log("✅ All images uploaded to Storage");
     }
 
+    // Determine assignedTo based on barangay detection
+    let assignedTo = null;
+    if (location?.latitude && location?.longitude) {
+      const detectedBarangay = findBarangayByCoordinates(
+        location.longitude,
+        location.latitude,
+        barangayBoundaries
+      );
+
+      if (detectedBarangay) {
+        assignedTo = `${detectedBarangay} Barangay LGU`;
+        console.log(`✅ Report assigned to: ${assignedTo}`);
+      } else {
+        console.log("⚠️ Could not determine barangay for assignment");
+      }
+    }
+
     // Create clean report data following the ReportData interface from types/reporting.ts
     const cleanReportData = {
       // Required fields from ReportData interface
       originalDescription: description,                    // string
       reportedBy: userId || "anonymous",                   // string
-      assignedTo: null,                                    // string | undefined (assigned by admin later)
+      assignedTo: assignedTo,                              // string | undefined (barangay LGU based on location)
       createdAt: serverTimestamp(),                        // Firestore Timestamp
       status: "pending",                                   // "pending" | "in_progress" | "resolved" | "closed" | "rejected"
 

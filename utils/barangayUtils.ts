@@ -78,6 +78,7 @@ export function haversineDistance(
 
 /**
  * Finds which barangay a given coordinate belongs to
+ * Uses a hybrid approach: polygon containment + distance verification
  *
  * @param longitude - Longitude of the point
  * @param latitude - Latitude of the point
@@ -90,17 +91,43 @@ export function findBarangayByCoordinates(
   boundaries: BarangayBoundary[]
 ): string | null {
   const point: [number, number] = [longitude, latitude];
+  const MAX_DISTANCE_THRESHOLD_KM = 1.5; // Maximum reasonable distance from barangay center
 
-  // First pass: Check if point is inside any barangay polygon
+  // First pass: Check if point is inside any polygon AND verify distance to center
+  const polygonMatches: Array<{ name: string; distance: number }> = [];
+
   for (const barangay of boundaries) {
     if (isPointInPolygon(point, barangay.boundingBox.coordinates)) {
-      console.log(`✅ Point is inside ${barangay.name}`);
-      return barangay.name;
+      const distanceToCenter = haversineDistance(point, barangay.coords.coordinates);
+
+      console.log(`📍 Point inside ${barangay.name} polygon (distance to center: ${distanceToCenter.toFixed(2)}km)`);
+
+      polygonMatches.push({
+        name: barangay.name,
+        distance: distanceToCenter
+      });
     }
   }
 
-  // Second pass: Find nearest barangay center as fallback
-  console.log('⚠️ Point not inside any polygon, finding nearest barangay...');
+  // If we have polygon matches, return the one with closest center point
+  if (polygonMatches.length > 0) {
+    // Sort by distance to center (closest first)
+    polygonMatches.sort((a, b) => a.distance - b.distance);
+
+    const closest = polygonMatches[0];
+
+    // If the closest match is within reasonable distance, use it
+    if (closest.distance <= MAX_DISTANCE_THRESHOLD_KM) {
+      console.log(`✅ Best match: ${closest.name} (${closest.distance.toFixed(2)}km from center)`);
+      return closest.name;
+    }
+
+    // If distance is too far, it might be an inaccurate polygon
+    console.log(`⚠️ Polygon match found but too far from center (${closest.distance.toFixed(2)}km), falling back to nearest coords...`);
+  }
+
+  // Second pass: Find nearest barangay by center point as fallback
+  console.log('🔍 Finding nearest barangay by coords...');
 
   let nearestBarangay: string | null = null;
   let minDistance = Infinity;
@@ -114,12 +141,12 @@ export function findBarangayByCoordinates(
     }
   }
 
-  if (nearestBarangay && minDistance < 2) { // Within 2km
+  if (nearestBarangay) {
     console.log(`✅ Nearest barangay: ${nearestBarangay} (${minDistance.toFixed(2)}km away)`);
     return nearestBarangay;
   }
 
-  console.log('❌ No nearby barangay found');
+  console.log('❌ No barangay found (should not happen if boundaries data is valid)');
   return null;
 }
 

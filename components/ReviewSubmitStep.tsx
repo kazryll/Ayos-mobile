@@ -81,25 +81,15 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({
     }
   };
 
-  const getAssignedDepartment = (category?: string) => {
-    if (!category) return "General";
-    const map: { [key: string]: string } = {
-      infrastructure: "DPWH - Roads Division",
-      utilities: "Baguio City Utilities",
-      environment: "City Environment Office",
-      "public safety": "Public Safety Division",
-      "social services": "Social Welfare Department",
-      other: "General Services Office",
-    };
-
-    const key = category.toLowerCase();
-    return map[key] || "General";
-  };
-
+  // Determine assignedTo based on detected barangay
   const assignedTo = (() => {
-    const dept = (aiAnalysis as any)?.department;
-    if (dept) return dept;
-    return getAssignedDepartment(aiAnalysis?.category);
+    console.log("📍 ReviewSubmitStep - reportLocation:", reportLocation);
+    console.log("📍 ReviewSubmitStep - barangay:", reportLocation?.barangay);
+
+    if (reportLocation?.barangay && reportLocation.barangay !== "Unknown") {
+      return `${reportLocation.barangay} Barangay LGU`;
+    }
+    return "To be assigned";
   })();
 
   return (

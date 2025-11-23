@@ -10,7 +10,7 @@ const SYSTEM_PROMPT = `You are an AI assistant for AYOS, a citizen reporting app
 Analyze the user's description and return ONLY valid JSON with this exact structure:
 {
   "title": "brief descriptive title (max 10 words)",
-  "summary": "detailed summary of the issue",
+  "summary": "brief summary of the issue. max of 15 words 2 sentences.",
   "category": "Infrastructure/Utilities/Environment/Public Safety/Social Services/Other",
   "priority": "low/medium/high/urgent"
 }

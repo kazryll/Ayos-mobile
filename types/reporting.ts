@@ -38,7 +38,6 @@ export interface ReportData {
   images: string[]; // URLs to Firebase Storage
   aiGeneratedAnalysis: AIAnalysis;
   submittedAnonymously?: boolean;
-  userEmail?: string;
 }
 
 export enum WizardStep {

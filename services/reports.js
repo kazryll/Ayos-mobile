@@ -64,10 +64,9 @@ export const getUserReports = async (userId) => {
  * Submits a report to Firestore following the ReportData interface structure
  * @param {Object} reportData - Input report data from the wizard
  * @param {string|null} userId - The authenticated user's ID
- * @param {string|null} userEmail - The authenticated user's email
  * @returns {Promise<string>} The created report document ID
  */
-export const submitReport = async (reportData, userId = null, userEmail = null) => {
+export const submitReport = async (reportData, userId = null) => {
   try {
     const { images, aiAnalysis, description, location, ...otherData } = reportData;
 
@@ -116,8 +115,7 @@ export const submitReport = async (reportData, userId = null, userEmail = null) 
       },
 
       // Optional fields
-      submittedAnonymously: !userId,                       // boolean | undefined
-      ...(userEmail && { userEmail: userEmail })           // string | undefined
+      submittedAnonymously: !userId                        // boolean | undefined
     };
 
     const docRef = await addDoc(collection(db, "reports"), cleanReportData);

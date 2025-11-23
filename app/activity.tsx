@@ -179,13 +179,13 @@ export default function ActivityScreen() {
           <View style={styles.metricsCard}>
             <View style={styles.metricItem}>
               <Text style={styles.metricNumber}>{userStats.totalReports}</Text>
-              <Text style={styles.metricLabel}>Total Reports</Text>
+              <Text style={styles.metricLabel}>Reports</Text>
             </View>
             <View style={styles.metricItem}>
               <Text style={styles.metricNumber}>
                 {userStats.resolvedReports}
               </Text>
-              <Text style={styles.metricLabel}>Total Reports Resolved</Text>
+              <Text style={styles.metricLabel}>Resolved</Text>
             </View>
             <View style={styles.metricItem}>
               <Text style={styles.metricNumber}>{getTotalViews()}</Text>

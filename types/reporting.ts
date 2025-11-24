@@ -26,7 +26,7 @@ export interface ReportData {
   reportedBy: string;
   assignedTo?: string;
   createdAt: any; // Firestore Timestamp
-  status: "pending" | "in_progress" | "resolved" | "closed" | "rejected";
+  status: "for_approval" | "approved"  | "in_progress" | "resolved" | "closed" | "rejected";
   location: {
     latitude: number;
     longitude: number;

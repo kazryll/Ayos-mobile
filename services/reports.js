@@ -1,18 +1,17 @@
 import {
   addDoc,
   collection,
-  getDocs,
-  getDoc,
-  setDoc,
   deleteDoc,
   doc,
-  updateDoc,
+  getDoc,
+  getDocs,
+  increment,
   orderBy,
   query,
   serverTimestamp,
+  setDoc,
+  updateDoc,
   where,
-  runTransaction,
-  increment
 } from "firebase/firestore";
 import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
 import { db } from "../config/firebase";
@@ -28,7 +27,10 @@ const uploadImageToStorage = async (imageUri, reportId, index) => {
     const response = await fetch(imageUri);
     const blob = await response.blob();
 
-    const storageRef = ref(storage, `reports/${reportId}/images/image_${index}_${Date.now()}.jpg`);
+    const storageRef = ref(
+      storage,
+      `reports/${reportId}/images/image_${index}_${Date.now()}.jpg`
+    );
 
     const snapshot = await uploadBytes(storageRef, blob);
     const downloadURL = await getDownloadURL(snapshot.ref);
@@ -77,7 +79,8 @@ export const getUserReports = async (userId) => {
  */
 export const submitReport = async (reportData, userId = null) => {
   try {
-    const { images, aiAnalysis, description, location, ...otherData } = reportData;
+    const { images, aiAnalysis, description, location, ...otherData } =
+      reportData;
 
     // Upload images first if they exist
     let imageUrls = [];
@@ -114,41 +117,40 @@ export const submitReport = async (reportData, userId = null) => {
     // Create clean report data following the ReportData interface from types/reporting.ts
     const cleanReportData = {
       // Required fields from ReportData interface
-      originalDescription: description,                    // string
-      reportedBy: userId || "anonymous",                   // string
-      assignedTo: assignedTo,                              // string | undefined (barangay LGU based on location)
-      createdAt: serverTimestamp(),                        // Firestore Timestamp
-      status: "pending",                                   // "pending" | "in_progress" | "resolved" | "closed" | "rejected"
+      originalDescription: description, // string
+      reportedBy: userId || "anonymous", // string
+      assignedTo: assignedTo, // string | undefined (barangay LGU based on location)
+      createdAt: serverTimestamp(), // Firestore Timestamp
+      status: "pending", // "pending" | "in_progress" | "resolved" | "closed" | "rejected"
 
       // location object with all required fields
       location: {
-        latitude: location?.latitude || 0,                 // number
-        longitude: location?.longitude || 0,               // number
-        address: location?.address || "Unknown",           // string
-        barangay: location?.barangay || "Unknown",         // string
-        city: location?.city || "Unknown",                 // string
-        province: location?.province || "Unknown"          // string
+        latitude: location?.latitude || 0, // number
+        longitude: location?.longitude || 0, // number
+        address: location?.address || "Unknown", // string
+        barangay: location?.barangay || "Unknown", // string
+        city: location?.city || "Unknown", // string
+        province: location?.province || "Unknown", // string
       },
 
-      images: imageUrls,                                   // string[] (Firebase Storage URLs)
+      images: imageUrls, // string[] (Firebase Storage URLs)
 
       // aiGeneratedAnalysis object (AIAnalysis interface)
       aiGeneratedAnalysis: {
-        title: aiAnalysis?.title || "Untitled Report",    // string
-        summary: aiAnalysis?.summary || description,       // string
-        category: aiAnalysis?.category || "Other",         // IssueCategory enum
-        priority: aiAnalysis?.priority || "medium"         // IssuePriority enum
+        title: aiAnalysis?.title || "Untitled Report", // string
+        summary: aiAnalysis?.summary || description, // string
+        category: aiAnalysis?.category || "Other", // IssueCategory enum
+        priority: aiAnalysis?.priority || "medium", // IssuePriority enum
       },
 
       // Optional fields
-      submittedAnonymously: !userId                        // boolean | undefined
+      submittedAnonymously: !userId, // boolean | undefined
     };
 
     const docRef = await addDoc(collection(db, "reports"), cleanReportData);
     console.log("✅ Report submitted successfully with ID: ", docRef.id);
 
     return docRef.id;
-
   } catch (error) {
     console.error("❌ Error submitting report: ", error);
     throw new Error("Failed to submit report to database");
@@ -157,10 +159,7 @@ export const submitReport = async (reportData, userId = null) => {
 
 export const getNearbyReports = async () => {
   try {
-    const q = query(
-      collection(db, "reports"),
-      orderBy("createdAt", "desc")
-    );
+    const q = query(collection(db, "reports"), orderBy("createdAt", "desc"));
 
     const querySnapshot = await getDocs(q);
     const reports = [];
@@ -246,11 +245,17 @@ export const addComment = async (reportId, userId, text) => {
 export const getComments = async (reportId) => {
   try {
     const commentsCol = collection(db, "reports", reportId, "comments");
-    const snapshot = await getDocs(query(commentsCol, orderBy("createdAt", "asc")));
+    const snapshot = await getDocs(
+      query(commentsCol, orderBy("createdAt", "asc"))
+    );
     const comments = [];
     snapshot.forEach((c) => {
       const d = c.data();
-      comments.push({ id: c.id, ...d, createdAt: d.createdAt?.toDate?.() || new Date() });
+      comments.push({
+        id: c.id,
+        ...d,
+        createdAt: d.createdAt?.toDate?.() || new Date(),
+      });
     });
     return comments;
   } catch (error) {
@@ -351,7 +356,10 @@ export const updateReportStatus = async (reportId, newStatus) => {
     const prevStatus = data.status;
     const ownerId = data.reportedBy;
 
-    await updateDoc(reportRef, { status: newStatus, updatedAt: serverTimestamp() });
+    await updateDoc(reportRef, {
+      status: newStatus,
+      updatedAt: serverTimestamp(),
+    });
 
     // If moved to 'resolved' from non-resolved, increment user's verifiedReportCount
     if (prevStatus !== "resolved" && newStatus === "resolved" && ownerId) {

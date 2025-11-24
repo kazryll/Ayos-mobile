@@ -1,7 +1,10 @@
 // screens/HomeScreen.tsx
-import { getNearbyReports, getAllReports, addComment, getComments, voteReport } from "@/services/reports";
-import { getUserStats, getUserProfile } from "@/services/userService";
-import { getNotificationsForUser, markNotificationRead } from "@/services/notifications";
+import {
+  getNotificationsForUser,
+  markNotificationRead,
+} from "@/services/notifications";
+import { getAllReports, getComments, voteReport } from "@/services/reports";
+import { getUserProfile, getUserStats } from "@/services/userService";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -90,14 +93,24 @@ export default function HomeScreen() {
         const withAuthors = await Promise.all(
           all.map(async (r) => {
             try {
-              const profile = r.reportedBy ? await getUserProfile(r.reportedBy) : null;
-              const displayName = profile?.displayName || profile?.name || (r.reportedBy ? r.reportedBy.split("@")[0] : "User");
+              const profile = r.reportedBy
+                ? await getUserProfile(r.reportedBy)
+                : null;
+              const displayName =
+                profile?.displayName ||
+                profile?.name ||
+                (r.reportedBy ? r.reportedBy.split("@")[0] : "User");
               const firstName = displayName.split(" ")[0];
               return { ...r, authorFirstName: firstName };
             } catch (profileErr) {
               // If profile fetch fails for this report, just use fallback name
-              console.warn(`Could not load profile for report ${r.id}:`, profileErr);
-              const fallbackName = r.reportedBy ? r.reportedBy.split("@")[0] : "User";
+              console.warn(
+                `Could not load profile for report ${r.id}:`,
+                profileErr
+              );
+              const fallbackName = r.reportedBy
+                ? r.reportedBy.split("@")[0]
+                : "User";
               return { ...r, authorFirstName: fallbackName };
             }
           })
@@ -135,7 +148,8 @@ export default function HomeScreen() {
 
   // SAFE data access - won't crash if data is missing
   const getDisplayName = () => {
-    if (userProfile && userProfile.displayName) return userProfile.displayName.split(" ")[0];
+    if (userProfile && userProfile.displayName)
+      return userProfile.displayName.split(" ")[0];
     if (auth.currentUser && auth.currentUser.email)
       return auth.currentUser.email.split("@")[0];
     return "User";
@@ -225,30 +239,84 @@ export default function HomeScreen() {
           end={{ x: 1, y: 1 }}
           style={styles.header}
         >
-          <View style={{flexDirection:'row', justifyContent:'space-between', alignItems:'center'}}>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
             <View>
-              <Text style={styles.greeting}>Good Morning, {getDisplayName()}!</Text>
+              <Text style={styles.greeting}>
+                Good Morning, {getDisplayName()}!
+              </Text>
               {userProfile?.verifiedReportCount !== undefined && (
-                <Text style={{color:'rgba(255,255,255,0.9)', marginTop:6}}>Verified reports: {userProfile.verifiedReportCount}</Text>
+                <Text style={{ color: "rgba(255,255,255,0.9)", marginTop: 6 }}>
+                  Verified reports: {userProfile.verifiedReportCount}
+                </Text>
               )}
             </View>
             <View>
-              <TouchableOpacity onPress={async ()=>{ setNotifOpen(!notifOpen); if(!notifOpen){ const user = auth.currentUser; if(user){ const notifs = await getNotificationsForUser(user.uid); setNotifications(notifs); } } }}>
-                <Text style={{color:'white', fontSize:20}}>🔔 {notifications.filter(n=>!n.read).length}</Text>
+              <TouchableOpacity
+                onPress={async () => {
+                  setNotifOpen(!notifOpen);
+                  if (!notifOpen) {
+                    const user = auth.currentUser;
+                    if (user) {
+                      const notifs = await getNotificationsForUser(user.uid);
+                      setNotifications(notifs);
+                    }
+                  }
+                }}
+              >
+                <Text style={{ color: "white", fontSize: 20 }}>
+                  🔔 {notifications.filter((n) => !n.read).length}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Notifications dropdown */}
           {notifOpen && (
-            <View style={{backgroundColor:'rgba(255,255,255,0.95)', padding:10, marginTop:10, borderRadius:8}}>
+            <View
+              style={{
+                backgroundColor: "rgba(255,255,255,0.95)",
+                padding: 10,
+                marginTop: 10,
+                borderRadius: 8,
+              }}
+            >
               {notifications.length === 0 ? (
-                <Text style={{color:'#2c3e50'}}>No notifications</Text>
+                <Text style={{ color: "#2c3e50" }}>No notifications</Text>
               ) : (
                 notifications.map((n) => (
-                  <TouchableOpacity key={n.id} onPress={async ()=>{ try{ await markNotificationRead(n.id); const user = auth.currentUser; if(user){ const updated = await getNotificationsForUser(user.uid); setNotifications(updated); } }catch(e){console.warn(e)} }} style={{paddingVertical:6}}>
-                    <Text style={{fontWeight: n.read ? 'normal' : 'bold'}}>{n.type} • {n.payload?.reportId ? `Report ${n.payload.reportId}` : ''}</Text>
-                    <Text style={{color:'#7f8c8d', fontSize:12}}>{new Date(n.createdAt).toLocaleString()}</Text>
+                  <TouchableOpacity
+                    key={n.id}
+                    onPress={async () => {
+                      try {
+                        await markNotificationRead(n.id);
+                        const user = auth.currentUser;
+                        if (user) {
+                          const updated = await getNotificationsForUser(
+                            user.uid
+                          );
+                          setNotifications(updated);
+                        }
+                      } catch (e) {
+                        console.warn(e);
+                      }
+                    }}
+                    style={{ paddingVertical: 6 }}
+                  >
+                    <Text style={{ fontWeight: n.read ? "normal" : "bold" }}>
+                      {n.type} •{" "}
+                      {n.payload?.reportId
+                        ? `Report ${n.payload.reportId}`
+                        : ""}
+                    </Text>
+                    <Text style={{ color: "#7f8c8d", fontSize: 12 }}>
+                      {new Date(n.createdAt).toLocaleString()}
+                    </Text>
                   </TouchableOpacity>
                 ))
               )}
@@ -310,38 +378,113 @@ export default function HomeScreen() {
 
         {/* Feed - All Reports (replaces Issues Near You) */}
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-          </View>
+          <View style={styles.sectionHeader}></View>
 
           {feedReports.length > 0 ? (
             feedReports.map((report) => (
-              <View key={report.id} style={[styles.reportItem, {flexDirection:'column', alignItems:'flex-start'}]}>
-                <View style={{width:'100%'}}>
+              <View
+                key={report.id}
+                style={[
+                  styles.reportItem,
+                  { flexDirection: "column", alignItems: "flex-start" },
+                ]}
+              >
+                <View style={{ width: "100%" }}>
                   <View style={styles.reportHeader}>
-                    <Text style={styles.reportTitle}>{report.aiGeneratedAnalysis?.title || report.originalDescription?.slice(0,80) || 'Untitled'}</Text>
-                    <View style={[styles.categoryBadge, { backgroundColor: getCategoryColor(report) }]}>
-                      <Text style={styles.categoryBadgeText}>{report.aiGeneratedAnalysis?.category || 'General'}</Text>
+                    <Text style={styles.reportTitle}>
+                      {report.aiGeneratedAnalysis?.title ||
+                        report.originalDescription?.slice(0, 80) ||
+                        "Untitled"}
+                    </Text>
+                    <View
+                      style={[
+                        styles.categoryBadge,
+                        { backgroundColor: getCategoryColor(report) },
+                      ]}
+                    >
+                      <Text style={styles.categoryBadgeText}>
+                        {report.aiGeneratedAnalysis?.category || "General"}
+                      </Text>
                     </View>
                   </View>
-                  <Text style={styles.reportLocation}>{report.authorFirstName} • {new Date(report.createdAt).toLocaleString()}</Text>
-                  <Text style={{marginTop:8, color:'#34495e'}}>{report.aiGeneratedAnalysis?.summary || report.originalDescription}</Text>
+                  <Text style={styles.reportLocation}>
+                    {report.authorFirstName} •{" "}
+                    {new Date(report.createdAt).toLocaleString()}
+                  </Text>
+                  <Text style={{ marginTop: 8, color: "#34495e" }}>
+                    {report.aiGeneratedAnalysis?.summary ||
+                      report.originalDescription}
+                  </Text>
                 </View>
 
-                <View style={{flexDirection:'row', width:'100%', justifyContent:'space-between', marginTop:10}}>
-                  <View style={{flexDirection:'row', alignItems:'center'}}>
-                    <TouchableOpacity style={{marginRight:12}} onPress={async ()=>{ try{ if(!auth.currentUser){ Alert.alert('Sign in required'); return; } await voteReport(report.id, auth.currentUser.uid, 'up'); await loadHomeData(); }catch(e){console.warn(e)} }}>
-                      <Text>👍 {report.upvotes||0}</Text>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    width: "100%",
+                    justifyContent: "space-between",
+                    marginTop: 10,
+                  }}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <TouchableOpacity
+                      style={{ marginRight: 12 }}
+                      onPress={async () => {
+                        try {
+                          if (!auth.currentUser) {
+                            Alert.alert("Sign in required");
+                            return;
+                          }
+                          await voteReport(
+                            report.id,
+                            auth.currentUser.uid,
+                            "up"
+                          );
+                          await loadHomeData();
+                        } catch (e) {
+                          console.warn(e);
+                        }
+                      }}
+                    >
+                      <Text>👍 {report.upvotes || 0}</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={{marginRight:12}} onPress={async ()=>{ try{ if(!auth.currentUser){ Alert.alert('Sign in required'); return; } await voteReport(report.id, auth.currentUser.uid, 'down'); await loadHomeData(); }catch(e){console.warn(e)} }}>
-                      <Text>👎 {report.downvotes||0}</Text>
+                    <TouchableOpacity
+                      style={{ marginRight: 12 }}
+                      onPress={async () => {
+                        try {
+                          if (!auth.currentUser) {
+                            Alert.alert("Sign in required");
+                            return;
+                          }
+                          await voteReport(
+                            report.id,
+                            auth.currentUser.uid,
+                            "down"
+                          );
+                          await loadHomeData();
+                        } catch (e) {
+                          console.warn(e);
+                        }
+                      }}
+                    >
+                      <Text>👎 {report.downvotes || 0}</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={async ()=>{ /* open comments modal inline by navigating or toggling state - simple alert for now */ const c = await getComments(report.id); Alert.alert('Comments', `Found ${c.length} comments`); }}>
+                    <TouchableOpacity
+                      onPress={async () => {
+                        /* open comments modal inline by navigating or toggling state - simple alert for now */ const c =
+                          await getComments(report.id);
+                        Alert.alert("Comments", `Found ${c.length} comments`);
+                      }}
+                    >
                       <Text>💬 View Comments</Text>
                     </TouchableOpacity>
                   </View>
                   <View>
-                    <View style={[styles.statusBadge, getStatusBadgeStyle(report)]}> 
-                      <Text style={styles.statusText}>{getReportStatus(report)}</Text>
+                    <View
+                      style={[styles.statusBadge, getStatusBadgeStyle(report)]}
+                    >
+                      <Text style={styles.statusText}>
+                        {getReportStatus(report)}
+                      </Text>
                     </View>
                   </View>
                 </View>

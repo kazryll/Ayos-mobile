@@ -1,11 +1,18 @@
 import {
-    addDoc,
-    collection,
-    getDocs,
-    orderBy,
-    query,
-    serverTimestamp,
-    where
+  addDoc,
+  collection,
+  getDocs,
+  getDoc,
+  setDoc,
+  deleteDoc,
+  doc,
+  updateDoc,
+  orderBy,
+  query,
+  serverTimestamp,
+  where,
+  runTransaction,
+  increment
 } from "firebase/firestore";
 import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
 import { db } from "../config/firebase";
@@ -172,5 +179,208 @@ export const getNearbyReports = async () => {
   } catch (error) {
     console.error("Error getting nearby reports:", error);
     return [];
+  }
+};
+
+// Fetch all reports (feed) with optional limit
+export const getAllReports = async (limit = 50) => {
+  try {
+    const q = query(collection(db, "reports"), orderBy("createdAt", "desc"));
+    const snapshot = await getDocs(q);
+    const reports = [];
+    snapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      reports.push({
+        id: docSnap.id,
+        ...data,
+        createdAt: data.createdAt?.toDate?.() || new Date(),
+        updatedAt: data.updatedAt?.toDate?.() || new Date(),
+      });
+    });
+    return reports.slice(0, limit);
+  } catch (error) {
+    console.error("Error getting all reports:", error);
+    return [];
+  }
+};
+
+// COMMENTS
+export const addComment = async (reportId, userId, text) => {
+  try {
+    const comment = {
+      userId,
+      text,
+      createdAt: serverTimestamp(),
+    };
+
+    const commentsCol = collection(db, "reports", reportId, "comments");
+    const docRef = await addDoc(commentsCol, comment);
+
+    // create a notification for the report owner
+    try {
+      const reportDoc = await getDoc(doc(db, "reports", reportId));
+      if (reportDoc.exists()) {
+        const data = reportDoc.data();
+        const ownerId = data.reportedBy;
+        if (ownerId && ownerId !== userId) {
+          await addDoc(collection(db, "notifications"), {
+            userId: ownerId,
+            type: "comment",
+            payload: { reportId, commentId: docRef.id, text },
+            read: false,
+            createdAt: serverTimestamp(),
+          });
+        }
+      }
+    } catch (notifErr) {
+      console.warn("Could not create comment notification:", notifErr);
+    }
+
+    return docRef.id;
+  } catch (error) {
+    console.error("Error adding comment:", error);
+    throw error;
+  }
+};
+
+export const getComments = async (reportId) => {
+  try {
+    const commentsCol = collection(db, "reports", reportId, "comments");
+    const snapshot = await getDocs(query(commentsCol, orderBy("createdAt", "asc")));
+    const comments = [];
+    snapshot.forEach((c) => {
+      const d = c.data();
+      comments.push({ id: c.id, ...d, createdAt: d.createdAt?.toDate?.() || new Date() });
+    });
+    return comments;
+  } catch (error) {
+    console.error("Error getting comments:", error);
+    return [];
+  }
+};
+
+// VOTING: upvote/downvote with single-vote-per-user enforcement
+export const voteReport = async (reportId, userId, voteType) => {
+  // voteType: 'up' | 'down'
+  try {
+    const voteDocId = `${reportId}_${userId}`;
+    const voteDocRef = doc(db, "reportVotes", voteDocId);
+    const reportRef = doc(db, "reports", reportId);
+
+    // First, check if report exists
+    const reportSnap = await getDoc(reportRef);
+    if (!reportSnap.exists()) throw new Error("Report not found");
+
+    // Get current vote state
+    const voteSnap = await getDoc(voteDocRef);
+    const prevVote = voteSnap.exists() ? voteSnap.data().vote : null;
+
+    // Handle toggle off (same vote clicked)
+    if (prevVote === voteType) {
+      console.log(`⬜ Toggling off ${voteType} vote`);
+      // Delete the vote
+      await deleteDoc(voteDocRef);
+      // Decrement the counter
+      if (voteType === "up") {
+        await updateDoc(reportRef, { upvotes: increment(-1) });
+      } else {
+        await updateDoc(reportRef, { downvotes: increment(-1) });
+      }
+    } else {
+      // Handle vote creation or switching
+      console.log(`📝 Creating ${voteType} vote (prev: ${prevVote || "none"})`);
+
+      // If switching votes, decrement the old one
+      if (prevVote === "up") {
+        await updateDoc(reportRef, { upvotes: increment(-1) });
+      } else if (prevVote === "down") {
+        await updateDoc(reportRef, { downvotes: increment(-1) });
+      }
+
+      // Create the vote document - use setDoc without merge to force CREATE operation
+      const voteData = { vote: voteType, userId, reportId };
+      if (voteSnap.exists()) {
+        // Document exists, use updateDoc
+        await updateDoc(voteDocRef, voteData);
+      } else {
+        // Document doesn't exist, use setDoc to CREATE
+        await setDoc(voteDocRef, voteData);
+      }
+
+      // Increment the new vote
+      if (voteType === "up") {
+        await updateDoc(reportRef, { upvotes: increment(1) });
+      } else {
+        await updateDoc(reportRef, { downvotes: increment(1) });
+      }
+    }
+
+    // Create notification for upvote
+    if (voteType === "up" && prevVote !== "up") {
+      try {
+        const reportData = reportSnap.data();
+        const ownerId = reportData.reportedBy;
+        if (ownerId && ownerId !== userId) {
+          await addDoc(collection(db, "notifications"), {
+            userId: ownerId,
+            type: "upvote",
+            payload: { reportId },
+            read: false,
+            createdAt: serverTimestamp(),
+          });
+        }
+      } catch (notifErr) {
+        console.warn("Could not create upvote notification:", notifErr);
+      }
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error voting report:", error);
+    throw error;
+  }
+};
+
+// Update report status and maintain verifiedReportCount on the user
+export const updateReportStatus = async (reportId, newStatus) => {
+  try {
+    const reportRef = doc(db, "reports", reportId);
+    const reportSnap = await getDoc(reportRef);
+    if (!reportSnap.exists()) throw new Error("Report not found");
+    const data = reportSnap.data();
+    const prevStatus = data.status;
+    const ownerId = data.reportedBy;
+
+    await updateDoc(reportRef, { status: newStatus, updatedAt: serverTimestamp() });
+
+    // If moved to 'resolved' from non-resolved, increment user's verifiedReportCount
+    if (prevStatus !== "resolved" && newStatus === "resolved" && ownerId) {
+      const userRef = doc(db, "users", ownerId);
+      await updateDoc(userRef, { verifiedReportCount: increment(1) });
+
+      // notify owner about verification
+      try {
+        await addDoc(collection(db, "notifications"), {
+          userId: ownerId,
+          type: "verified",
+          payload: { reportId },
+          read: false,
+          createdAt: serverTimestamp(),
+        });
+      } catch (notifErr) {
+        console.warn("Could not create verification notification:", notifErr);
+      }
+    }
+
+    // If was resolved and now not, decrement
+    if (prevStatus === "resolved" && newStatus !== "resolved" && ownerId) {
+      const userRef = doc(db, "users", ownerId);
+      await updateDoc(userRef, { verifiedReportCount: increment(-1) });
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error updating report status:", error);
+    throw error;
   }
 };

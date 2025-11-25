@@ -3,7 +3,12 @@ import {
   getNotificationsForUser,
   markNotificationRead,
 } from "@/services/notifications";
-import { getAllReports, getComments, voteReport } from "@/services/reports";
+import {
+  getAllReports,
+  getComments,
+  getUserVoteForReport,
+  voteReport,
+} from "@/services/reports";
 import { getUserProfile, getUserStats } from "@/services/userService";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -11,6 +16,7 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -21,6 +27,15 @@ import {
 import BottomNav from "../components/BottomNav";
 import { auth } from "../config/firebase";
 import theme from "../config/theme";
+
+// Import all vote and comment icons
+const arrowUpwardOutline = require("@/assets/icons/arrow-upward-outline.png");
+const arrowUpwardBold = require("@/assets/icons/arrow-upward-bold.png");
+const arrowDownwardOutline = require("@/assets/icons/arrow-downward-outline.png");
+const arrowDownwardBold = require("@/assets/icons/arrow-downward-bold.png");
+const commentOutline = require("@/assets/icons/comment-outline.png");
+const commentBold = require("@/assets/icons/comment-bold.png");
+const notificationIcon = require("@/assets/icons/notification.png");
 // note: getUserProfile imported from userService above
 
 export default function HomeScreen() {
@@ -37,6 +52,7 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [userVotes, setUserVotes] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
     loadHomeData();
@@ -116,6 +132,23 @@ export default function HomeScreen() {
           })
         );
         setFeedReports(withAuthors || []);
+
+        // Load user's votes for all reports
+        try {
+          const user = auth.currentUser;
+          if (user) {
+            const votesMap: { [key: string]: string } = {};
+            for (const report of withAuthors) {
+              const userVote = await getUserVoteForReport(report.id, user.uid);
+              if (userVote) {
+                votesMap[report.id] = userVote;
+              }
+            }
+            setUserVotes(votesMap);
+          }
+        } catch (voteErr) {
+          console.warn("Could not load user votes:", voteErr);
+        }
       } catch (error) {
         console.error("❌ Error loading feed reports:", error);
         setFeedReports([]);
@@ -268,9 +301,21 @@ export default function HomeScreen() {
                     }
                   }
                 }}
+                style={{ flexDirection: "row", alignItems: "center" }}
               >
-                <Text style={{ color: "white", fontSize: 20 }}>
-                  🔔 {notifications.filter((n) => !n.read).length}
+                <Image
+                  source={notificationIcon}
+                  style={{
+                    width: 24,
+                    height: 24,
+                    marginRight: 6,
+                    tintColor: "white",
+                  }}
+                />
+                <Text
+                  style={{ color: "white", fontSize: 16, fontWeight: "600" }}
+                >
+                  {notifications.filter((n) => !n.read).length}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -427,7 +472,11 @@ export default function HomeScreen() {
                 >
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
                     <TouchableOpacity
-                      style={{ marginRight: 12 }}
+                      style={{
+                        marginRight: 12,
+                        flexDirection: "row",
+                        alignItems: "center",
+                      }}
                       onPress={async () => {
                         try {
                           if (!auth.currentUser) {
@@ -445,10 +494,29 @@ export default function HomeScreen() {
                         }
                       }}
                     >
-                      <Text>👍 {report.upvotes || 0}</Text>
+                      <Image
+                        source={
+                          userVotes[report.id] === "up"
+                            ? arrowUpwardBold
+                            : arrowUpwardOutline
+                        }
+                        style={{ width: 18, height: 18, marginRight: 4 }}
+                      />
+                      <Text
+                        style={{
+                          fontWeight:
+                            userVotes[report.id] === "up" ? "bold" : "normal",
+                        }}
+                      >
+                        {report.upvotes || 0}
+                      </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={{ marginRight: 12 }}
+                      style={{
+                        marginRight: 12,
+                        flexDirection: "row",
+                        alignItems: "center",
+                      }}
                       onPress={async () => {
                         try {
                           if (!auth.currentUser) {
@@ -466,16 +534,35 @@ export default function HomeScreen() {
                         }
                       }}
                     >
-                      <Text>👎 {report.downvotes || 0}</Text>
+                      <Image
+                        source={
+                          userVotes[report.id] === "down"
+                            ? arrowDownwardBold
+                            : arrowDownwardOutline
+                        }
+                        style={{ width: 18, height: 18, marginRight: 4 }}
+                      />
+                      <Text
+                        style={{
+                          fontWeight:
+                            userVotes[report.id] === "down" ? "bold" : "normal",
+                        }}
+                      >
+                        {report.downvotes || 0}
+                      </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
+                      style={{ flexDirection: "row", alignItems: "center" }}
                       onPress={async () => {
-                        /* open comments modal inline by navigating or toggling state - simple alert for now */ const c =
-                          await getComments(report.id);
+                        const c = await getComments(report.id);
                         Alert.alert("Comments", `Found ${c.length} comments`);
                       }}
                     >
-                      <Text>💬 View Comments</Text>
+                      <Image
+                        source={commentOutline}
+                        style={{ width: 18, height: 18, marginRight: 4 }}
+                      />
+                      <Text>View Comments</Text>
                     </TouchableOpacity>
                   </View>
                   <View>

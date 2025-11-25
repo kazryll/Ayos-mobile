@@ -264,6 +264,23 @@ export const getComments = async (reportId) => {
   }
 };
 
+// Get user's current vote for a report ('up', 'down', or null)
+export const getUserVoteForReport = async (reportId, userId) => {
+  try {
+    const voteDocId = `${reportId}_${userId}`;
+    const voteDocRef = doc(db, "reportVotes", voteDocId);
+    const voteSnap = await getDoc(voteDocRef);
+    
+    if (voteSnap.exists()) {
+      return voteSnap.data().vote; // returns 'up' or 'down'
+    }
+    return null; // no vote
+  } catch (error) {
+    console.warn("Error getting user vote:", error);
+    return null;
+  }
+};
+
 // VOTING: upvote/downvote with single-vote-per-user enforcement
 export const voteReport = async (reportId, userId, voteType) => {
   // voteType: 'up' | 'down'

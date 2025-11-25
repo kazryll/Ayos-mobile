@@ -12,7 +12,6 @@ import {
     View,
 } from "react-native";
 import theme from "../config/theme";
-import { AIAnalysis } from "../types/reporting";
 
 interface ReviewSubmitStepProps {
   userDescription: string;
@@ -194,7 +193,7 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({
             </View>
           )}
         </View>
-        
+
         <View style={styles.aiNote}>
           <Text style={styles.aiNoteText}>
             ℹ️ AI will analyze and categorize your report upon submission

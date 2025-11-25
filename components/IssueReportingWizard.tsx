@@ -4,7 +4,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import { onAuthStateChanged } from "firebase/auth";
 import React, { JSX, useEffect, useRef, useState } from "react";
 import {
-    ActivityIndicator,
     Alert,
     Animated,
     Easing,
@@ -14,7 +13,7 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View,
+    View
 } from "react-native";
 import { auth } from "../config/firebase";
 import theme from "../config/theme";
@@ -291,7 +290,7 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
               {aiAnalysis && (
                 <View style={styles.aiSummarySection}>
                   <Text style={styles.aiSummaryTitle}>AI Analysis Summary</Text>
-                  
+
                   <View style={styles.summaryGrid}>
                     <View style={styles.summaryItem}>
                       <Text style={styles.summaryLabel}>Title:</Text>

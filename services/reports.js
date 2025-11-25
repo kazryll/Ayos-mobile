@@ -117,11 +117,11 @@ export const submitReport = async (reportData, userId = null) => {
     // Create clean report data following the ReportData interface from types/reporting.ts
     const cleanReportData = {
       // Required fields from ReportData interface
-      originalDescription: description,                    // string
-      reportedBy: userId || "anonymous",                   // string
-      assignedTo: assignedTo,                              // string | undefined (barangay LGU based on location)
-      createdAt: serverTimestamp(),                        // Firestore Timestamp
-      status: "for_approval",                              // "for_approval" | "approved" | "pending" | "in_progress" | "resolved" | "closed" | "rejected"
+      originalDescription: description, // string
+      reportedBy: userId || "anonymous", // string
+      assignedTo: assignedTo, // string | undefined (barangay LGU based on location)
+      createdAt: serverTimestamp(), // Firestore Timestamp
+      status: "for_approval", // "for_approval" | "approved" | "pending" | "in_progress" | "resolved" | "closed" | "rejected"
 
       // location object with all required fields
       location: {
@@ -270,7 +270,7 @@ export const getUserVoteForReport = async (reportId, userId) => {
     const voteDocId = `${reportId}_${userId}`;
     const voteDocRef = doc(db, "reportVotes", voteDocId);
     const voteSnap = await getDoc(voteDocRef);
-    
+
     if (voteSnap.exists()) {
       return voteSnap.data().vote; // returns 'up' or 'down'
     }

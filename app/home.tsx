@@ -3,7 +3,12 @@ import {
   getNotificationsForUser,
   markNotificationRead,
 } from "@/services/notifications";
-import { getAllReports, getComments, getUserVoteForReport, voteReport } from "@/services/reports";
+import {
+  getAllReports,
+  getComments,
+  getUserVoteForReport,
+  voteReport,
+} from "@/services/reports";
 import { getUserProfile, getUserStats } from "@/services/userService";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -300,9 +305,16 @@ export default function HomeScreen() {
               >
                 <Image
                   source={notificationIcon}
-                  style={{ width: 24, height: 24, marginRight: 6, tintColor: "white" }}
+                  style={{
+                    width: 24,
+                    height: 24,
+                    marginRight: 6,
+                    tintColor: "white",
+                  }}
                 />
-                <Text style={{ color: "white", fontSize: 16, fontWeight: "600" }}>
+                <Text
+                  style={{ color: "white", fontSize: 16, fontWeight: "600" }}
+                >
                   {notifications.filter((n) => !n.read).length}
                 </Text>
               </TouchableOpacity>
@@ -460,7 +472,11 @@ export default function HomeScreen() {
                 >
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
                     <TouchableOpacity
-                      style={{ marginRight: 12, flexDirection: "row", alignItems: "center" }}
+                      style={{
+                        marginRight: 12,
+                        flexDirection: "row",
+                        alignItems: "center",
+                      }}
                       onPress={async () => {
                         try {
                           if (!auth.currentUser) {
@@ -479,15 +495,28 @@ export default function HomeScreen() {
                       }}
                     >
                       <Image
-                        source={userVotes[report.id] === "up" ? arrowUpwardBold : arrowUpwardOutline}
+                        source={
+                          userVotes[report.id] === "up"
+                            ? arrowUpwardBold
+                            : arrowUpwardOutline
+                        }
                         style={{ width: 18, height: 18, marginRight: 4 }}
                       />
-                      <Text style={{ fontWeight: userVotes[report.id] === "up" ? "bold" : "normal" }}>
+                      <Text
+                        style={{
+                          fontWeight:
+                            userVotes[report.id] === "up" ? "bold" : "normal",
+                        }}
+                      >
                         {report.upvotes || 0}
                       </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={{ marginRight: 12, flexDirection: "row", alignItems: "center" }}
+                      style={{
+                        marginRight: 12,
+                        flexDirection: "row",
+                        alignItems: "center",
+                      }}
                       onPress={async () => {
                         try {
                           if (!auth.currentUser) {
@@ -506,10 +535,19 @@ export default function HomeScreen() {
                       }}
                     >
                       <Image
-                        source={userVotes[report.id] === "down" ? arrowDownwardBold : arrowDownwardOutline}
+                        source={
+                          userVotes[report.id] === "down"
+                            ? arrowDownwardBold
+                            : arrowDownwardOutline
+                        }
                         style={{ width: 18, height: 18, marginRight: 4 }}
                       />
-                      <Text style={{ fontWeight: userVotes[report.id] === "down" ? "bold" : "normal" }}>
+                      <Text
+                        style={{
+                          fontWeight:
+                            userVotes[report.id] === "down" ? "bold" : "normal",
+                        }}
+                      >
                         {report.downvotes || 0}
                       </Text>
                     </TouchableOpacity>

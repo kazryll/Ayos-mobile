@@ -1,0 +1,57 @@
+[
+  {
+    "category_id": "waste_sanitation",
+    "name": "Waste Management & Sanitation",
+    "text_for_embedding": "Reports regarding garbage collection, littering, sewage issues, vermin infestations, illegal dumping, or other sanitation concerns that affect the cleanliness and hygiene of the community."
+  },
+  {
+    "category_id": "water_drainage",
+    "name": "Water Supply & Drainage",
+    "text_for_embedding": "Reports regarding water supply issues, water quality complaints, pipe leaks, clogged drains, flooding, or other concerns affecting the availability and flow of water in the community."
+  },
+  {
+    "category_id": "electricity_lighting",
+    "name": "Electricity & Street Lighting",
+    "text_for_embedding": "Reports about power outages, faulty electrical lines, broken streetlights, or other electrical issues that impact public safety and convenience."
+  },
+  {
+    "category_id": "public_infrastructure",
+    "name": "Public Infrastructure & Facilities",
+    "text_for_embedding": "Reports about roads, bridges, public buildings, sidewalks, street signs, and other infrastructure or facility issues that require maintenance or repair."
+  },
+  {
+    "category_id": "transportation_traffic",
+    "name": "Transportation & Traffic Management",
+    "text_for_embedding": "Reports related to traffic congestion, improper parking, damaged traffic signs, pedestrian hazards, or other transportation issues affecting mobility and safety."
+  },
+  {
+    "category_id": "amenities_environment",
+    "name": "Community Amenities & Environmental Concerns",
+    "text_for_embedding": "Reports about parks, playgrounds, tree planting, green spaces, minor pollution, and other environmental or recreational issues that affect community well-being."
+  },
+  {
+    "category_id": "public_health_safety",
+    "name": "Public Health & Safety (Non-Emergency)",
+    "text_for_embedding": "Reports concerning non-life-threatening health issues, minor accidents, pest problems, or other concerns affecting residents' safety and public health."
+  },
+  {
+    "category_id": "animal_veterinary",
+    "name": "Animal & Veterinary Concerns",
+    "text_for_embedding": "Reports about stray animals, livestock management, veterinary services, animal welfare, or minor animal-related hazards in the community."
+  },
+  {
+    "category_id": "public_order_minor",
+    "name": "Public Order & Minor Disturbances",
+    "text_for_embedding": "Reports regarding noise complaints, vandalism, minor conflicts between residents, and other non-criminal disturbances affecting community order."
+  },
+  {
+    "category_id": "social_welfare_accessibility",
+    "name": "Social Welfare & Accessibility",
+    "text_for_embedding": "Reports about access to social programs, public services for vulnerable populations, facilities for the elderly or disabled, or other community welfare concerns."
+  },
+  {
+    "category_id": "governance_transparency",
+    "name": "Governance & Transparency Reports",
+    "text_for_embedding": "Reports concerning government service efficiency, civic engagement, public resource management, or transparency issues that residents want to flag to authorities."
+  }
+]

@@ -1,6 +1,7 @@
 // services/groqService.ts
 import { ENV } from "../config/env";
 import { AIAnalysis, IssueCategory, IssuePriority } from "../types/reporting";
+import { categorizeReport } from "./aiCategorization";
 
 // Read API keys from environment config. Avoid hardcoding secrets in the repo.
 const GROQ_API_KEY = ENV.GROQ_API_KEY || '';
@@ -11,16 +12,27 @@ Analyze the user's description and return ONLY valid JSON with this exact struct
 {
   "title": "brief descriptive title (max 10 words)",
   "summary": "brief summary of the issue. max of 15 words 2 sentences.",
-  "category": "Infrastructure/Utilities/Environment/Public Safety/Social Services/Other",
-  "priority": "low/medium/high/urgent"
+  "priority": "low/medium/high"
 }
 
 Return ONLY the JSON object, no other text.`;
 
 export const analyzeIssueWithAI = async (userDescription: string): Promise<AIAnalysis> => {
   try {
-    console.log('🚀 Analyzing with Groq AI...');
+    console.log('🚀 Analyzing report with AI...');
 
+    // Step 1: Use embedding-based categorization (aiCategorization.ts)
+    console.log('📊 Running embedding-based categorization...');
+    const categorizationResult = await categorizeReport(userDescription);
+
+    console.log('✅ Categorization result:', {
+      category: categorizationResult.categoryName,
+      confidence: `${(categorizationResult.confidence * 100).toFixed(1)}%`,
+      method: categorizationResult.method
+    });
+
+    // Step 2: Generate title and summary with Groq
+    console.log('📝 Generating title and summary with Groq...');
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -61,7 +73,7 @@ export const analyzeIssueWithAI = async (userDescription: string): Promise<AIAna
     const result: AIAnalysis = {
       title: parsedResponse.title || 'Untitled Report',
       summary: parsedResponse.summary,
-      category: mapToIssueCategory(parsedResponse.category),
+      category: mapCategoryIdToEnum(categorizationResult.categoryId),
       priority: mapToIssuePriority(parsedResponse.priority)
     };
 
@@ -83,6 +95,17 @@ export const analyzeIssueWithAI = async (userDescription: string): Promise<AIAna
 };
 
 const analyzeWithGemini = async (userDescription: string): Promise<AIAnalysis> => {
+  // Step 1: Use embedding-based categorization
+  console.log('📊 Running embedding-based categorization...');
+  const categorizationResult = await categorizeReport(userDescription);
+
+  console.log('✅ Categorization result:', {
+    category: categorizationResult.categoryName,
+    confidence: `${(categorizationResult.confidence * 100).toFixed(1)}%`,
+    method: categorizationResult.method
+  });
+
+  // Step 2: Generate title and summary with Gemini
   const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
     method: 'POST',
     headers: {
@@ -158,7 +181,7 @@ const analyzeWithGemini = async (userDescription: string): Promise<AIAnalysis> =
   const result: AIAnalysis = {
     title: parsedResponse.title || 'Untitled Report',
     summary: parsedResponse.summary || userDescription.substring(0, 100),
-    category: mapToIssueCategory(parsedResponse.category || 'other'),
+    category: mapCategoryIdToEnum(categorizationResult.categoryId),
     priority: mapToIssuePriority(parsedResponse.priority || 'medium')
   };
 
@@ -166,17 +189,24 @@ const analyzeWithGemini = async (userDescription: string): Promise<AIAnalysis> =
   return result;
 };
 
-const mapToIssueCategory = (category: string): IssueCategory => {
-  const normalized = category.toLowerCase().trim();
+/**
+ * Map category IDs from reportCategories.json to IssueCategory enum
+ */
+const mapCategoryIdToEnum = (categoryId: string): IssueCategory => {
   const map: { [key: string]: IssueCategory } = {
-    infrastructure: IssueCategory.INFRASTRUCTURE,
-    utilities: IssueCategory.UTILITIES,
-    environment: IssueCategory.ENVIRONMENT,
-    "public safety": IssueCategory.PUBLIC_SAFETY,
-    "social_services": IssueCategory.SOCIAL_SERVICES,
-    other: IssueCategory.OTHER,
+    waste_sanitation: IssueCategory.WASTE_SANITATION,
+    water_drainage: IssueCategory.WATER_DRAINAGE,
+    electricity_lighting: IssueCategory.ELECTRICITY_LIGHTING,
+    public_infrastructure: IssueCategory.PUBLIC_INFRASTRUCTURE,
+    transportation_traffic: IssueCategory.TRANSPORTATION_TRAFFIC,
+    amenities_environment: IssueCategory.AMENITIES_ENVIRONMENT,
+    public_health_safety: IssueCategory.PUBLIC_HEALTH_SAFETY,
+    animal_veterinary: IssueCategory.ANIMAL_VETERINARY,
+    public_order_minor: IssueCategory.PUBLIC_ORDER_MINOR,
+    social_welfare_accessibility: IssueCategory.SOCIAL_WELFARE_ACCESSIBILITY,
+    governance_transparency: IssueCategory.GOVERNANCE_TRANSPARENCY,
   };
-  return map[normalized] || IssueCategory.OTHER;
+  return map[categoryId] || IssueCategory.PUBLIC_INFRASTRUCTURE;
 };
 
 const mapToIssuePriority = (priority: string): IssuePriority => {

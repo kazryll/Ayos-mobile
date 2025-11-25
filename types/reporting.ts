@@ -6,12 +6,17 @@ export enum IssuePriority {
 }
 
 export enum IssueCategory {
-  INFRASTRUCTURE = "Infrastructure",
-  UTILITIES = "Utilities",
-  ENVIRONMENT = "Environment",
-  PUBLIC_SAFETY = "Public Safety",
-  SOCIAL_SERVICES = "Social Services",
-  OTHER = "Other",
+  WASTE_SANITATION = "Waste Management & Sanitation",
+  WATER_DRAINAGE = "Water Supply & Drainage",
+  ELECTRICITY_LIGHTING = "Electricity & Street Lighting",
+  PUBLIC_INFRASTRUCTURE = "Public Infrastructure & Facilities",
+  TRANSPORTATION_TRAFFIC = "Transportation & Traffic Management",
+  AMENITIES_ENVIRONMENT = "Community Amenities & Environmental Concerns",
+  PUBLIC_HEALTH_SAFETY = "Public Health & Safety (Non-Emergency)",
+  ANIMAL_VETERINARY = "Animal & Veterinary Concerns",
+  PUBLIC_ORDER_MINOR = "Public Order & Minor Disturbances",
+  SOCIAL_WELFARE_ACCESSIBILITY = "Social Welfare & Accessibility",
+  GOVERNANCE_TRANSPARENCY = "Governance & Transparency Reports",
 }
 
 export interface AIAnalysis {

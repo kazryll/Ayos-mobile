@@ -16,7 +16,6 @@ import { AIAnalysis } from "../types/reporting";
 
 interface ReviewSubmitStepProps {
   userDescription: string;
-  aiAnalysis: AIAnalysis | null;
   reportLocation: any;
   onBack: () => void;
   onSubmit: (images: string[]) => void;
@@ -24,7 +23,6 @@ interface ReviewSubmitStepProps {
 
 const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({
   userDescription,
-  aiAnalysis,
   reportLocation,
   onBack,
   onSubmit,
@@ -104,7 +102,7 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({
           Review & Submit
         </Text>
         <Text style={[styles.subtitle, styles.subtitleOnGradient]}>
-          Add photos and review your AI-generated report before submission
+          Add photos and review your report before submission
         </Text>
       </LinearGradient>
 
@@ -167,45 +165,14 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({
         </View>
       </View>
 
-      {/* AI-Generated Report Summary */}
+      {/* Report Preview */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>AI-Generated Report Summary</Text>
+        <Text style={styles.sectionTitle}>Report Preview</Text>
 
         <View style={styles.summaryGrid}>
-          {/* Category */}
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>Category:</Text>
-            <Text style={styles.summaryValue}>
-              {aiAnalysis?.category || "Not specified"}
-            </Text>
-          </View>
-
-          {/* Priority */}
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>Priority:</Text>
-            <Text
-              style={[
-                styles.summaryValue,
-                { color: getPriorityColor(aiAnalysis?.priority || "") },
-              ]}
-            >
-              {aiAnalysis?.priority
-                ? String(aiAnalysis.priority).toUpperCase()
-                : "Not specified"}
-            </Text>
-          </View>
-
-          {/* Title */}
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>Title:</Text>
-            <Text style={styles.summaryValue}>
-              {aiAnalysis?.title || "Not specified"}
-            </Text>
-          </View>
-
           {/* Assigned To */}
           <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>Assigned To:</Text>
+            <Text style={styles.summaryLabel}>Will be assigned to:</Text>
             <Text style={styles.summaryValue}>{assignedTo}</Text>
           </View>
 
@@ -226,8 +193,12 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({
               </Text>
             </View>
           )}
-
-          {/* Confidence removed per design update */}
+        </View>
+        
+        <View style={styles.aiNote}>
+          <Text style={styles.aiNoteText}>
+            ℹ️ AI will analyze and categorize your report upon submission
+          </Text>
         </View>
       </View>
 
@@ -471,6 +442,18 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "600",
     fontSize: 16,
+  },
+  aiNote: {
+    backgroundColor: "#E8F4FD",
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 12,
+  },
+  aiNoteText: {
+    color: "#1976D2",
+    fontSize: 13,
+    textAlign: "center",
+    fontWeight: "500",
   },
 });
 

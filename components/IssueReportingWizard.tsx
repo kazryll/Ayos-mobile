@@ -40,7 +40,6 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
   );
   const [userDescription, setUserDescription] = useState<string>("");
   const [aiAnalysis, setAiAnalysis] = useState<AIAnalysis | null>(null);
-  const [generatedTitle, setGeneratedTitle] = useState<string>("");
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [reportLocation, setReportLocation] = useState<{
     latitude: number;
@@ -89,34 +88,12 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
     }
   }, [currentStep, iconOpacity, iconScale]);
 
-  const handleAnalyzeWithAI = async (): Promise<void> => {
+  const handleNext = (): void => {
     if (!userDescription.trim()) {
       Alert.alert("Error", "Please describe the issue first.");
       return;
     }
-
-    setIsAnalyzing(true);
-
-    try {
-      const analysis = await analyzeIssueWithAI(userDescription);
-
-      // Generate title immediately after analysis
-      const title = await generateReportTitle(analysis.summary);
-      setGeneratedTitle(title);
-
-      // Store title in aiAnalysis
-      const analysisWithTitle = { ...analysis, title };
-      setAiAnalysis(analysisWithTitle);
-
-      setCurrentStep(WizardStep.ADD_LOCATION); // Automatically move to Step 2 (Location)
-    } catch (error) {
-      Alert.alert(
-        "Analysis Failed",
-        error instanceof Error ? error.message : "Unknown error occurred"
-      );
-    } finally {
-      setIsAnalyzing(false);
-    }
+    setCurrentStep(WizardStep.ADD_LOCATION);
   };
 
   const handleConfirm = async (
@@ -126,9 +103,16 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
     setIsSubmitting(true);
 
     try {
+      // Run AI analysis at submission time
+      console.log('🤖 Running AI analysis...');
+      const analysis = await analyzeIssueWithAI(userDescription);
+      const title = await generateReportTitle(analysis.summary);
+      const analysisWithTitle = { ...analysis, title };
+      setAiAnalysis(analysisWithTitle);
+
       const reportData = {
         description: userDescription,
-        aiAnalysis: aiAnalysis,
+        aiAnalysis: analysisWithTitle,
         location: reportLocation
           ? {
               address: reportLocation.address,
@@ -150,9 +134,9 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
       };
 
       console.log("📤 Submitting report with data:", {
-        title: aiAnalysis?.title,
+        title: analysisWithTitle.title,
         location: reportData.location.address,
-        category: aiAnalysis?.category,
+        category: analysisWithTitle.category,
       });
 
       const reportId = await submitReport(
@@ -242,21 +226,10 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
                 styles.ctaButton,
                 !userDescription.trim() && styles.ctaButtonDisabled,
               ]}
-              onPress={handleAnalyzeWithAI}
-              disabled={!userDescription.trim() || isAnalyzing}
+              onPress={handleNext}
+              disabled={!userDescription.trim()}
             >
-              {isAnalyzing ? (
-                <>
-                  <ActivityIndicator
-                    size="small"
-                    color="#fff"
-                    style={{ marginRight: 8 }}
-                  />
-                  <Text style={styles.ctaButtonText}>Analyzing...</Text>
-                </>
-              ) : (
-                <Text style={styles.ctaButtonText}>Next</Text>
-              )}
+              <Text style={styles.ctaButtonText}>Next</Text>
             </TouchableOpacity>
           </View>
         );
@@ -279,7 +252,6 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
         return (
           <ReviewSubmitStep
             userDescription={userDescription}
-            aiAnalysis={aiAnalysis}
             reportLocation={reportLocation}
             onBack={() => setCurrentStep(WizardStep.ADD_LOCATION)}
             onSubmit={(images) => {
@@ -291,7 +263,7 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
 
       case WizardStep.SUBMISSION_SUCCESS:
         return (
-          <View style={[styles.stepContainer, styles.successFull]}>
+          <ScrollView style={[styles.stepContainer, styles.successFull]}>
             <View style={styles.successContainer}>
               <Animated.View
                 style={{
@@ -315,6 +287,44 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
                 reports section.
               </Text>
 
+              {/* AI-Generated Report Summary */}
+              {aiAnalysis && (
+                <View style={styles.aiSummarySection}>
+                  <Text style={styles.aiSummaryTitle}>AI Analysis Summary</Text>
+                  
+                  <View style={styles.summaryGrid}>
+                    <View style={styles.summaryItem}>
+                      <Text style={styles.summaryLabel}>Title:</Text>
+                      <Text style={styles.summaryValue}>{aiAnalysis.title}</Text>
+                    </View>
+
+                    <View style={styles.summaryItem}>
+                      <Text style={styles.summaryLabel}>Category:</Text>
+                      <Text style={styles.summaryValue}>{aiAnalysis.category}</Text>
+                    </View>
+
+                    <View style={styles.summaryItem}>
+                      <Text style={styles.summaryLabel}>Priority:</Text>
+                      <Text style={[styles.summaryValue, { color: getPriorityColor(aiAnalysis.priority) }]}>
+                        {getPriorityText(aiAnalysis.priority)}
+                      </Text>
+                    </View>
+
+                    <View style={styles.summaryItem}>
+                      <Text style={styles.summaryLabel}>Assigned To:</Text>
+                      <Text style={styles.summaryValue}>
+                        {reportLocation?.barangay ? `${reportLocation.barangay} Barangay LGU` : 'To be assigned'}
+                      </Text>
+                    </View>
+
+                    <View style={[styles.summaryItem, { borderBottomWidth: 0 }]}>
+                      <Text style={styles.summaryLabel}>Summary:</Text>
+                    </View>
+                    <Text style={styles.aiSummaryText}>{aiAnalysis.summary}</Text>
+                  </View>
+                </View>
+              )}
+
               <View style={styles.successButtonWrapper}>
                 <TouchableOpacity onPress={onClose} activeOpacity={0.92}>
                   <LinearGradient
@@ -323,12 +333,12 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
                     end={{ x: 1, y: 1 }}
                     style={[styles.ctaButton, styles.successConfirmGradient]}
                   >
-                    <Text style={styles.ctaButtonText}>Confirm</Text>
+                    <Text style={styles.ctaButtonText}>Done</Text>
                   </LinearGradient>
                 </TouchableOpacity>
               </View>
             </View>
-          </View>
+          </ScrollView>
         );
 
       default:
@@ -693,6 +703,49 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "600",
     fontSize: 16,
+  },
+  aiSummarySection: {
+    width: '100%',
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    padding: 16,
+    marginVertical: 20,
+  },
+  aiSummaryTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1C1C1E',
+    marginBottom: 16,
+  },
+  summaryGrid: {
+    gap: 4,
+  },
+  summaryItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5EA',
+  },
+  summaryLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#666',
+    flex: 1,
+  },
+  summaryValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1C1C1E',
+    flex: 2,
+    textAlign: 'right',
+  },
+  aiSummaryText: {
+    fontSize: 14,
+    color: '#1C1C1E',
+    lineHeight: 20,
+    marginTop: 8,
   },
   confirmButtonText: {
     color: theme.Colors.background,

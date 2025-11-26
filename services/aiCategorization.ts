@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { ENV } from "../config/env";
 
 // Types
 export interface CategoryMatch {
@@ -47,11 +48,7 @@ let cachedCategories: Category[] | null = null;
  * Get Gemini API key from environment
  */
 function getApiKey(): string {
-  const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error('EXPO_PUBLIC_GEMINI_API_KEY is not set in environment variables');
-  }
-  return apiKey;
+  return ENV.GEMINI_API_KEY || "";
 }
 
 /**
@@ -72,8 +69,14 @@ export function preprocessText(text: string): string {
  * Generate embedding for given text using Gemini API
  */
 export async function generateEmbedding(text: string): Promise<number[]> {
+  // If no Gemini API key is configured, use a deterministic fallback embedding
+  if (!ENV.GEMINI_API_KEY) {
+    console.warn('⚠️ EXPO_PUBLIC_GEMINI_API_KEY not set — using fallback embedding');
+    return generateFallbackEmbedding(text);
+  }
+
   try {
-    const genAI = new GoogleGenerativeAI(getApiKey());
+    const genAI = new GoogleGenerativeAI(ENV.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "text-embedding-004" });
 
     const preprocessedText = preprocessText(text);
@@ -81,9 +84,42 @@ export async function generateEmbedding(text: string): Promise<number[]> {
 
     return result.embedding.values;
   } catch (error) {
-    console.error('Error generating embedding:', error);
-    throw new Error(`Failed to generate embedding: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error('Error generating embedding with Gemini:', error);
+    console.warn('⚠️ Falling back to fallback embedding method');
+    return generateFallbackEmbedding(text);
   }
+}
+
+/**
+ * Fallback embedding: inexpensive deterministic embedding used when API key is missing
+ * Generates 768-dimensional embedding to match Gemini's text-embedding-004 output
+ */
+function generateFallbackEmbedding(text: string): number[] {
+  const preprocessed = preprocessText(text || "");
+  const words = preprocessed.split(' ').filter(Boolean);
+  const dim = 768; // Match Gemini's embedding dimension
+  const emb = new Array(dim).fill(0);
+
+  for (let i = 0; i < words.length; i++) {
+    const w = words[i];
+    const h = hashString(w);
+    const idx = h % dim;
+    emb[idx] += 1 / (i + 1);
+  }
+
+  // normalize
+  const mag = Math.sqrt(emb.reduce((s, v) => s + v * v, 0));
+  if (mag > 0) return emb.map((v) => v / mag);
+  return emb;
+}
+
+function hashString(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
 }
 
 /**
@@ -203,7 +239,13 @@ export async function validateWithLLM(
   topMatches: CategoryMatch[]
 ): Promise<string> {
   try {
-    const genAI = new GoogleGenerativeAI(getApiKey());
+    // If Gemini key is not configured, skip LLM validation and fallback to best embedding match
+    if (!ENV.GEMINI_API_KEY) {
+      console.warn('⚠️ EXPO_PUBLIC_GEMINI_API_KEY not set — skipping LLM validation, using embedding match');
+      return topMatches[0].categoryId;
+    }
+
+    const genAI = new GoogleGenerativeAI(ENV.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const categoryList = topMatches

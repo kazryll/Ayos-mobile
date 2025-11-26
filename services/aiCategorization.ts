@@ -15,7 +15,7 @@ export interface CategoryResult {
   categoryId: string;
   categoryName: string;
   confidence: number;
-  method: 'embedding' | 'llm_validated';
+  method: "embedding" | "llm_validated";
   topMatches: CategoryMatch[];
   reasoning: string;
 }
@@ -34,10 +34,10 @@ interface Category {
 
 // Constants
 const CONFIDENCE_LEVELS = {
-  HIGH: 0.8,      // Use embedding result directly
-  MEDIUM: 0.6,    // Validate with LLM
-  LOW: 0.4,       // Flag for human review
-  VERY_LOW: 0.0   // Reject or force manual categorization
+  HIGH: 0.8, // Use embedding result directly
+  MEDIUM: 0.6, // Validate with LLM
+  LOW: 0.4, // Flag for human review
+  VERY_LOW: 0.0, // Reject or force manual categorization
 };
 
 // Cache for category embeddings and data
@@ -58,10 +58,10 @@ export function preprocessText(text: string): string {
   return text
     .toLowerCase()
     .trim()
-    .replace(/\s+/g, ' ')                    // Normalize whitespace
-    .replace(/[^\w\s\u0100-\u017F]/g, ' ')   // Remove special chars, keep letters
-    .replace(/\d+/g, ' ')                    // Replace numbers with space
-    .replace(/\s+/g, ' ')                    // Clean up extra spaces again
+    .replace(/\s+/g, " ") // Normalize whitespace
+    .replace(/[^\w\s\u0100-\u017F]/g, " ") // Remove special chars, keep letters
+    .replace(/\d+/g, " ") // Replace numbers with space
+    .replace(/\s+/g, " ") // Clean up extra spaces again
     .trim();
 }
 
@@ -71,7 +71,9 @@ export function preprocessText(text: string): string {
 export async function generateEmbedding(text: string): Promise<number[]> {
   // If no Gemini API key is configured, use a deterministic fallback embedding
   if (!ENV.GEMINI_API_KEY) {
-    console.warn('⚠️ EXPO_PUBLIC_GEMINI_API_KEY not set — using fallback embedding');
+    console.warn(
+      "⚠️ EXPO_PUBLIC_GEMINI_API_KEY not set — using fallback embedding"
+    );
     return generateFallbackEmbedding(text);
   }
 
@@ -84,8 +86,8 @@ export async function generateEmbedding(text: string): Promise<number[]> {
 
     return result.embedding.values;
   } catch (error) {
-    console.error('Error generating embedding with Gemini:', error);
-    console.warn('⚠️ Falling back to fallback embedding method');
+    console.error("Error generating embedding with Gemini:", error);
+    console.warn("⚠️ Falling back to fallback embedding method");
     return generateFallbackEmbedding(text);
   }
 }
@@ -96,7 +98,7 @@ export async function generateEmbedding(text: string): Promise<number[]> {
  */
 function generateFallbackEmbedding(text: string): number[] {
   const preprocessed = preprocessText(text || "");
-  const words = preprocessed.split(' ').filter(Boolean);
+  const words = preprocessed.split(" ").filter(Boolean);
   const dim = 768; // Match Gemini's embedding dimension
   const emb = new Array(dim).fill(0);
 
@@ -125,9 +127,12 @@ function hashString(str: string): number {
 /**
  * Compute cosine similarity between two vectors
  */
-export function computeCosineSimilarity(vecA: number[], vecB: number[]): number {
+export function computeCosineSimilarity(
+  vecA: number[],
+  vecB: number[]
+): number {
   if (vecA.length !== vecB.length) {
-    throw new Error('Vectors must have the same length');
+    throw new Error("Vectors must have the same length");
   }
 
   const dotProduct = vecA.reduce((sum, a, i) => sum + a * vecB[i], 0);
@@ -151,11 +156,13 @@ async function loadCategoryEmbeddings(): Promise<CategoryEmbeddings> {
 
   try {
     // In React Native/Expo, use require() for local JSON files
-    cachedEmbeddings = require('../data/categoryEmbeddings.json');
+    cachedEmbeddings = require("../data/categoryEmbeddings.json");
     return cachedEmbeddings!;
   } catch (error) {
-    console.error('Error loading category embeddings:', error);
-    throw new Error('Category embeddings not found. Please ensure categoryEmbeddings.json exists in /data folder.');
+    console.error("Error loading category embeddings:", error);
+    throw new Error(
+      "Category embeddings not found. Please ensure categoryEmbeddings.json exists in /data folder."
+    );
   }
 }
 
@@ -169,11 +176,13 @@ async function loadCategories(): Promise<Category[]> {
 
   try {
     // In React Native/Expo, use require() for local JSON files
-    cachedCategories = require('../data/reportCategories.json');
+    cachedCategories = require("../data/reportCategories.json");
     return cachedCategories!;
   } catch (error) {
-    console.error('Error loading categories:', error);
-    throw new Error('Category data not found. Please ensure reportCategories.json exists in /data folder.');
+    console.error("Error loading categories:", error);
+    throw new Error(
+      "Category data not found. Please ensure reportCategories.json exists in /data folder."
+    );
   }
 }
 
@@ -182,7 +191,7 @@ async function loadCategories(): Promise<Category[]> {
  */
 async function getCategoryInfo(categoryId: string): Promise<Category> {
   const categories = await loadCategories();
-  const category = categories.find(c => c.category_id === categoryId);
+  const category = categories.find((c) => c.category_id === categoryId);
 
   if (!category) {
     throw new Error(`Category not found: ${categoryId}`);
@@ -214,19 +223,17 @@ export async function categorizeBySimilarity(
             similarity: computeCosineSimilarity(reportEmbedding, embedding),
             category: {
               name: category.name,
-              text_for_embedding: category.text_for_embedding
-            }
+              text_for_embedding: category.text_for_embedding,
+            },
           };
         }
       )
     );
 
     // 4. Sort by similarity (descending) and return top 3
-    return similarities
-      .sort((a, b) => b.similarity - a.similarity)
-      .slice(0, 3);
+    return similarities.sort((a, b) => b.similarity - a.similarity).slice(0, 3);
   } catch (error) {
-    console.error('Error in categorizeBySimilarity:', error);
+    console.error("Error in categorizeBySimilarity:", error);
     throw error;
   }
 }
@@ -241,7 +248,9 @@ export async function validateWithLLM(
   try {
     // If Gemini key is not configured, skip LLM validation and fallback to best embedding match
     if (!ENV.GEMINI_API_KEY) {
-      console.warn('⚠️ EXPO_PUBLIC_GEMINI_API_KEY not set — skipping LLM validation, using embedding match');
+      console.warn(
+        "⚠️ EXPO_PUBLIC_GEMINI_API_KEY not set — skipping LLM validation, using embedding match"
+      );
       return topMatches[0].categoryId;
     }
 
@@ -249,10 +258,15 @@ export async function validateWithLLM(
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const categoryList = topMatches
-      .map((m, i) =>
-        `${i + 1}. ${m.categoryId}: ${m.category.name} (${(m.similarity * 100).toFixed(1)}% similarity)\n   Description: ${m.category.text_for_embedding}`
+      .map(
+        (m, i) =>
+          `${i + 1}. ${m.categoryId}: ${m.category.name} (${(
+            m.similarity * 100
+          ).toFixed(1)}% similarity)\n   Description: ${
+            m.category.text_for_embedding
+          }`
       )
-      .join('\n\n');
+      .join("\n\n");
 
     const prompt = `You are a report classification system for a local government unit (LGU).
 
@@ -269,18 +283,20 @@ Return just the category_id (e.g., "waste_sanitation"), nothing else - no explan
     const response = result.response.text().trim();
 
     // Validate response is one of the top matches
-    const validIds = topMatches.map(m => m.categoryId);
-    const cleanResponse = response.replace(/['"]/g, '').trim();
+    const validIds = topMatches.map((m) => m.categoryId);
+    const cleanResponse = response.replace(/['"]/g, "").trim();
 
     if (validIds.includes(cleanResponse)) {
       return cleanResponse;
     }
 
     // If LLM returns invalid response, use best embedding match
-    console.warn(`LLM returned invalid category: ${response}. Using best embedding match.`);
+    console.warn(
+      `LLM returned invalid category: ${response}. Using best embedding match.`
+    );
     return topMatches[0].categoryId;
   } catch (error) {
-    console.error('Error in validateWithLLM:', error);
+    console.error("Error in validateWithLLM:", error);
     // Fallback to best embedding match on error
     return topMatches[0].categoryId;
   }
@@ -289,18 +305,20 @@ Return just the category_id (e.g., "waste_sanitation"), nothing else - no explan
 /**
  * Main categorization function - determines best category for a report
  */
-export async function categorizeReport(reportText: string): Promise<CategoryResult> {
+export async function categorizeReport(
+  reportText: string
+): Promise<CategoryResult> {
   try {
     // Validate input
     if (!reportText || reportText.trim().length === 0) {
-      throw new Error('Report text cannot be empty');
+      throw new Error("Report text cannot be empty");
     }
 
     // 1. Get top 3 matches by similarity
     const topMatches = await categorizeBySimilarity(reportText);
 
     if (topMatches.length === 0) {
-      throw new Error('No category matches found');
+      throw new Error("No category matches found");
     }
 
     const bestMatch = topMatches[0];
@@ -312,28 +330,42 @@ export async function categorizeReport(reportText: string): Promise<CategoryResu
         categoryId: bestMatch.categoryId,
         categoryName: bestMatch.category.name,
         confidence,
-        method: 'embedding',
+        method: "embedding",
         topMatches,
-        reasoning: `Strong embedding match with ${(confidence * 100).toFixed(1)}% similarity. Keywords and context align well with ${bestMatch.category.name}.`
+        reasoning: `Strong embedding match with ${(confidence * 100).toFixed(
+          1
+        )}% similarity. Keywords and context align well with ${
+          bestMatch.category.name
+        }.`,
       };
     }
 
     // 3. Medium/Low confidence → validate with LLM
-    console.log(`Confidence ${(confidence * 100).toFixed(1)}% below threshold. Validating with LLM...`);
+    console.log(
+      `Confidence ${(confidence * 100).toFixed(
+        1
+      )}% below threshold. Validating with LLM...`
+    );
 
     const validatedCategoryId = await validateWithLLM(reportText, topMatches);
-    const validatedMatch = topMatches.find(m => m.categoryId === validatedCategoryId);
+    const validatedMatch = topMatches.find(
+      (m) => m.categoryId === validatedCategoryId
+    );
 
     return {
       categoryId: validatedCategoryId,
       categoryName: validatedMatch?.category.name || bestMatch.category.name,
       confidence: validatedMatch?.similarity || confidence,
-      method: 'llm_validated',
+      method: "llm_validated",
       topMatches,
-      reasoning: `LLM analysis selected "${validatedMatch?.category.name}" from top ${topMatches.length} candidates. Confidence: ${(confidence * 100).toFixed(1)}%.`
+      reasoning: `LLM analysis selected "${
+        validatedMatch?.category.name
+      }" from top ${topMatches.length} candidates. Confidence: ${(
+        confidence * 100
+      ).toFixed(1)}%.`,
     };
   } catch (error) {
-    console.error('Error in categorizeReport:', error);
+    console.error("Error in categorizeReport:", error);
     throw error;
   }
 }
@@ -350,8 +382,8 @@ export function clearCache(): void {
  * Get confidence level description
  */
 export function getConfidenceLevel(confidence: number): string {
-  if (confidence >= CONFIDENCE_LEVELS.HIGH) return 'High';
-  if (confidence >= CONFIDENCE_LEVELS.MEDIUM) return 'Medium';
-  if (confidence >= CONFIDENCE_LEVELS.LOW) return 'Low';
-  return 'Very Low';
+  if (confidence >= CONFIDENCE_LEVELS.HIGH) return "High";
+  if (confidence >= CONFIDENCE_LEVELS.MEDIUM) return "Medium";
+  if (confidence >= CONFIDENCE_LEVELS.LOW) return "Low";
+  return "Very Low";
 }

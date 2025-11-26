@@ -55,6 +55,8 @@ export default function HomeScreen() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [notifOpen, setNotifOpen] = useState(false);
   const [userVotes, setUserVotes] = useState<{ [key: string]: string }>({});
+  const [votingReportId, setVotingReportId] = useState<string | null>(null);
+  const [submittingVote, setSubmittingVote] = useState(false);
   const [commentingReportId, setCommentingReportId] = useState<string | null>(
     null
   );
@@ -296,6 +298,66 @@ export default function HomeScreen() {
     }
   };
 
+  const handleVote = async (reportId: string, voteType: "up" | "down") => {
+    try {
+      if (!auth.currentUser) {
+        Alert.alert("Sign in required");
+        return;
+      }
+
+      setSubmittingVote(true);
+      setVotingReportId(reportId);
+
+      await voteReport(reportId, auth.currentUser.uid, voteType);
+
+      // Update local state instead of full reload for instant feedback
+      setUserVotes((prev) => {
+        const newVotes = { ...prev };
+        if (newVotes[reportId] === voteType) {
+          // Toggle off vote
+          delete newVotes[reportId];
+        } else {
+          // Set new vote
+          newVotes[reportId] = voteType;
+        }
+        return newVotes;
+      });
+
+      // Update vote counts in feed
+      setFeedReports((prev) =>
+        prev.map((report) => {
+          if (report.id === reportId) {
+            const currentVote = userVotes[reportId];
+            let newUpvotes = report.upvotes || 0;
+            let newDownvotes = report.downvotes || 0;
+
+            // Handle old vote removal
+            if (currentVote === "up") newUpvotes -= 1;
+            if (currentVote === "down") newDownvotes -= 1;
+
+            // Handle new vote
+            if (voteType === "up") newUpvotes += 1;
+            if (voteType === "down") newDownvotes += 1;
+
+            return {
+              ...report,
+              upvotes: Math.max(0, newUpvotes),
+              downvotes: Math.max(0, newDownvotes),
+            };
+          }
+          return report;
+        })
+      );
+
+      setVotingReportId(null);
+    } catch (error) {
+      console.error("Error voting on report:", error);
+      Alert.alert("Error", "Failed to vote on report");
+    } finally {
+      setSubmittingVote(false);
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -531,22 +593,22 @@ export default function HomeScreen() {
                         flexDirection: "row",
                         alignItems: "center",
                       }}
-                      onPress={async () => {
-                        try {
-                          if (!auth.currentUser) {
-                            Alert.alert("Sign in required");
-                            return;
-                          }
-                          await voteReport(
-                            report.id,
-                            auth.currentUser.uid,
-                            "up"
-                          );
-                          await loadHomeData();
-                        } catch (e) {
-                          console.warn(e);
+                      onPress={() => {
+                        if (!auth.currentUser) {
+                          Alert.alert("Sign in required");
+                          return;
+                        }
+                        // Toggle voting UI or handle direct vote
+                        if (userVotes[report.id] === "up") {
+                          // Remove upvote
+                          setVotingReportId(null);
+                          handleVote(report.id, "up");
+                        } else {
+                          // Show voting confirmation inline (or vote directly)
+                          handleVote(report.id, "up");
                         }
                       }}
+                      disabled={submittingVote && votingReportId === report.id}
                     >
                       <Image
                         source={
@@ -571,22 +633,22 @@ export default function HomeScreen() {
                         flexDirection: "row",
                         alignItems: "center",
                       }}
-                      onPress={async () => {
-                        try {
-                          if (!auth.currentUser) {
-                            Alert.alert("Sign in required");
-                            return;
-                          }
-                          await voteReport(
-                            report.id,
-                            auth.currentUser.uid,
-                            "down"
-                          );
-                          await loadHomeData();
-                        } catch (e) {
-                          console.warn(e);
+                      onPress={() => {
+                        if (!auth.currentUser) {
+                          Alert.alert("Sign in required");
+                          return;
+                        }
+                        // Toggle voting UI or handle direct vote
+                        if (userVotes[report.id] === "down") {
+                          // Remove downvote
+                          setVotingReportId(null);
+                          handleVote(report.id, "down");
+                        } else {
+                          // Show voting confirmation inline (or vote directly)
+                          handleVote(report.id, "down");
                         }
                       }}
+                      disabled={submittingVote && votingReportId === report.id}
                     >
                       <Image
                         source={

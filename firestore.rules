@@ -71,7 +71,9 @@ service cloud.firestore {
     // Report Votes collection - for upvote/downvote functionality
     match /reportVotes/{voteId} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn();
+      allow create: if isSignedIn() && 
+                       request.auth.uid == request.resource.data.userId &&
+                       exists(/databases/$(database)/documents/reports/$(request.resource.data.reportId));
       allow update: if isSignedIn() && request.auth.uid == resource.data.userId;
       allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
     }

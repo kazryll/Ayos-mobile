@@ -56,7 +56,7 @@ export default function HomeScreen() {
   const [notifOpen, setNotifOpen] = useState(false);
   const [userVotes, setUserVotes] = useState<{ [key: string]: string }>({});
   const [votingReportId, setVotingReportId] = useState<string | null>(null);
-  const [submittingVote, setSubmittingVote] = useState(false);
+  const [submittingVote, setSubmittingVote] = useState<{ [key: string]: boolean }>({});
   const [commentingReportId, setCommentingReportId] = useState<string | null>(
     null
   );
@@ -299,62 +299,103 @@ export default function HomeScreen() {
   };
 
   const handleVote = async (reportId: string, voteType: "up" | "down") => {
+    // Prevent spam clicking - if already voting on this report, ignore
+    if (submittingVote[reportId]) {
+      return;
+    }
+
     try {
       if (!auth.currentUser) {
         Alert.alert("Sign in required");
         return;
       }
 
-      setSubmittingVote(true);
-      setVotingReportId(reportId);
+      // Capture previous vote to compute optimistic deltas
+      const prevVote = userVotes[reportId] || null;
 
-      await voteReport(reportId, auth.currentUser.uid, voteType);
+      // Compute new vote state (toggle behavior)
+      const newVote = prevVote === voteType ? null : voteType;
 
-      // Update local state instead of full reload for instant feedback
+      // Optimistic UI update: mark submitting and update local vote state and counts
+      setSubmittingVote((prev) => ({ ...prev, [reportId]: true }));
+
+      // Optimistically update userVotes
       setUserVotes((prev) => {
-        const newVotes = { ...prev };
-        if (newVotes[reportId] === voteType) {
-          // Toggle off vote
-          delete newVotes[reportId];
+        const next = { ...prev };
+        if (newVote === null) {
+          delete next[reportId];
         } else {
-          // Set new vote
-          newVotes[reportId] = voteType;
+          next[reportId] = newVote;
         }
-        return newVotes;
+        return next;
       });
 
-      // Update vote counts in feed
+      // Optimistically update feed counts
       setFeedReports((prev) =>
         prev.map((report) => {
-          if (report.id === reportId) {
-            const currentVote = userVotes[reportId];
-            let newUpvotes = report.upvotes || 0;
-            let newDownvotes = report.downvotes || 0;
+          if (report.id !== reportId) return report;
 
-            // Handle old vote removal
-            if (currentVote === "up") newUpvotes -= 1;
-            if (currentVote === "down") newDownvotes -= 1;
+          let up = report.upvotes || 0;
+          let down = report.downvotes || 0;
 
-            // Handle new vote
-            if (voteType === "up") newUpvotes += 1;
-            if (voteType === "down") newDownvotes += 1;
+          // Remove previous vote
+          if (prevVote === "up") up = Math.max(0, up - 1);
+          if (prevVote === "down") down = Math.max(0, down - 1);
 
-            return {
-              ...report,
-              upvotes: Math.max(0, newUpvotes),
-              downvotes: Math.max(0, newDownvotes),
-            };
-          }
-          return report;
+          // Apply new vote
+          if (newVote === "up") up += 1;
+          if (newVote === "down") down += 1;
+
+          return { ...report, upvotes: up, downvotes: down };
         })
       );
+
+      // Call backend - if it fails, we'll revert optimistic changes
+      try {
+        await voteReport(reportId, auth.currentUser.uid, voteType);
+      } catch (err) {
+        // Revert optimistic updates
+        console.error("Error voting on report (reverting):", err);
+        // Revert userVotes
+        setUserVotes((prev) => {
+          const reverted = { ...prev };
+          if (prevVote === null) {
+            // we had no previous vote, so remove the optimistic one
+            delete reverted[reportId];
+          } else {
+            // restore previous vote
+            reverted[reportId] = prevVote;
+          }
+          return reverted;
+        });
+
+        // Revert feed counts
+        setFeedReports((prev) =>
+          prev.map((report) => {
+            if (report.id !== reportId) return report;
+            let up = report.upvotes || 0;
+            let down = report.downvotes || 0;
+
+            // Undo optimistic changes
+            if (newVote === "up") up = Math.max(0, up - 1);
+            if (newVote === "down") down = Math.max(0, down - 1);
+
+            if (prevVote === "up") up += 1;
+            if (prevVote === "down") down += 1;
+
+            return { ...report, upvotes: up, downvotes: down };
+          })
+        );
+
+        Alert.alert("Error", "Failed to vote on report");
+      }
 
       setVotingReportId(null);
     } catch (error) {
       console.error("Error voting on report:", error);
       Alert.alert("Error", "Failed to vote on report");
     } finally {
-      setSubmittingVote(false);
+      setSubmittingVote((prev) => ({ ...prev, [reportId]: false }));
     }
   };
 
@@ -598,17 +639,9 @@ export default function HomeScreen() {
                           Alert.alert("Sign in required");
                           return;
                         }
-                        // Toggle voting UI or handle direct vote
-                        if (userVotes[report.id] === "up") {
-                          // Remove upvote
-                          setVotingReportId(null);
-                          handleVote(report.id, "up");
-                        } else {
-                          // Show voting confirmation inline (or vote directly)
-                          handleVote(report.id, "up");
-                        }
+                        handleVote(report.id, "up");
                       }}
-                      disabled={submittingVote && votingReportId === report.id}
+                      disabled={submittingVote[report.id]}
                     >
                       <Image
                         source={
@@ -638,17 +671,9 @@ export default function HomeScreen() {
                           Alert.alert("Sign in required");
                           return;
                         }
-                        // Toggle voting UI or handle direct vote
-                        if (userVotes[report.id] === "down") {
-                          // Remove downvote
-                          setVotingReportId(null);
-                          handleVote(report.id, "down");
-                        } else {
-                          // Show voting confirmation inline (or vote directly)
-                          handleVote(report.id, "down");
-                        }
+                        handleVote(report.id, "down");
                       }}
-                      disabled={submittingVote && votingReportId === report.id}
+                      disabled={submittingVote[report.id]}
                     >
                       <Image
                         source={

@@ -60,7 +60,9 @@ export default function HomeScreen() {
   );
   const [commentText, setCommentText] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
-  const [reportComments, setReportComments] = useState<{ [key: string]: any[] }>({});
+  const [reportComments, setReportComments] = useState<{
+    [key: string]: any[];
+  }>({});
 
   useEffect(() => {
     loadHomeData();
@@ -174,7 +176,9 @@ export default function HomeScreen() {
                     const authorName =
                       commentAuthor?.displayName ||
                       commentAuthor?.name ||
-                      (comment.userId ? comment.userId.split("@")[0] : "Anonymous");
+                      (comment.userId
+                        ? comment.userId.split("@")[0]
+                        : "Anonymous");
                     return { ...comment, authorName };
                   } catch (err) {
                     return {
@@ -621,7 +625,7 @@ export default function HomeScreen() {
                         source={commentOutline}
                         style={{ width: 18, height: 18, marginRight: 4 }}
                       />
-                      <Text>{(reportComments[report.id]?.length || 0)}</Text>
+                      <Text>{reportComments[report.id]?.length || 0}</Text>
                     </TouchableOpacity>
                   </View>
                   <View>
@@ -701,28 +705,36 @@ export default function HomeScreen() {
                 )}
 
                 {/* Display Comments */}
-                {commentingReportId === report.id && reportComments[report.id] && reportComments[report.id].length > 0 && (
-                  <View style={styles.commentsSection}>
-                    <Text style={styles.commentsSectionTitle}>
-                      Comments ({reportComments[report.id].length})
-                    </Text>
-                    {reportComments[report.id].map((comment: any, index: number) => (
-                      <View key={index} style={styles.commentItem}>
-                        <View style={styles.commentHeader}>
-                          <Text style={styles.commentAuthor}>
-                            {comment.authorName || "Anonymous"}
-                          </Text>
-                          <Text style={styles.commentDate}>
-                            {comment.createdAt
-                              ? new Date(comment.createdAt).toLocaleDateString()
-                              : ""}
-                          </Text>
-                        </View>
-                        <Text style={styles.commentText}>{comment.text}</Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
+                {commentingReportId === report.id &&
+                  reportComments[report.id] &&
+                  reportComments[report.id].length > 0 && (
+                    <View style={styles.commentsSection}>
+                      <Text style={styles.commentsSectionTitle}>
+                        Comments ({reportComments[report.id].length})
+                      </Text>
+                      {reportComments[report.id].map(
+                        (comment: any, index: number) => (
+                          <View key={index} style={styles.commentItem}>
+                            <View style={styles.commentHeader}>
+                              <Text style={styles.commentAuthor}>
+                                {comment.authorName || "Anonymous"}
+                              </Text>
+                              <Text style={styles.commentDate}>
+                                {comment.createdAt
+                                  ? new Date(
+                                      comment.createdAt
+                                    ).toLocaleDateString()
+                                  : ""}
+                              </Text>
+                            </View>
+                            <Text style={styles.commentText}>
+                              {comment.text}
+                            </Text>
+                          </View>
+                        )
+                      )}
+                    </View>
+                  )}
               </View>
             ))
           ) : (

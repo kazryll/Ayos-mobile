@@ -4,6 +4,7 @@ import {
   markNotificationRead,
 } from "@/services/notifications";
 import {
+  addComment,
   getAllReports,
   getComments,
   getUserVoteForReport,
@@ -21,6 +22,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -53,6 +55,12 @@ export default function HomeScreen() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [notifOpen, setNotifOpen] = useState(false);
   const [userVotes, setUserVotes] = useState<{ [key: string]: string }>({});
+  const [commentingReportId, setCommentingReportId] = useState<string | null>(
+    null
+  );
+  const [commentText, setCommentText] = useState("");
+  const [submittingComment, setSubmittingComment] = useState(false);
+  const [reportComments, setReportComments] = useState<{ [key: string]: any[] }>({});
 
   useEffect(() => {
     loadHomeData();
@@ -148,6 +156,48 @@ export default function HomeScreen() {
           }
         } catch (voteErr) {
           console.warn("Could not load user votes:", voteErr);
+        }
+
+        // Load comments for all reports
+        try {
+          const commentsMap: { [key: string]: any[] } = {};
+          for (const report of withAuthors) {
+            try {
+              const comments = await getComments(report.id);
+              // Enrich comments with author names
+              const enrichedComments = await Promise.all(
+                comments.map(async (comment: any) => {
+                  try {
+                    const commentAuthor = comment.userId
+                      ? await getUserProfile(comment.userId)
+                      : null;
+                    const authorName =
+                      commentAuthor?.displayName ||
+                      commentAuthor?.name ||
+                      (comment.userId ? comment.userId.split("@")[0] : "Anonymous");
+                    return { ...comment, authorName };
+                  } catch (err) {
+                    return {
+                      ...comment,
+                      authorName: comment.userId
+                        ? comment.userId.split("@")[0]
+                        : "Anonymous",
+                    };
+                  }
+                })
+              );
+              commentsMap[report.id] = enrichedComments || [];
+            } catch (commentErr) {
+              console.warn(
+                `Could not load comments for report ${report.id}:`,
+                commentErr
+              );
+              commentsMap[report.id] = [];
+            }
+          }
+          setReportComments(commentsMap);
+        } catch (commentErr) {
+          console.warn("Could not load report comments:", commentErr);
         }
       } catch (error) {
         console.error("❌ Error loading feed reports:", error);
@@ -554,15 +604,24 @@ export default function HomeScreen() {
                     <TouchableOpacity
                       style={{ flexDirection: "row", alignItems: "center" }}
                       onPress={async () => {
-                        const c = await getComments(report.id);
-                        Alert.alert("Comments", `Found ${c.length} comments`);
+                        if (!auth.currentUser) {
+                          Alert.alert("Sign in required");
+                          return;
+                        }
+                        // Toggle comment input visibility
+                        if (commentingReportId === report.id) {
+                          setCommentingReportId(null);
+                          setCommentText("");
+                        } else {
+                          setCommentingReportId(report.id);
+                        }
                       }}
                     >
                       <Image
                         source={commentOutline}
                         style={{ width: 18, height: 18, marginRight: 4 }}
                       />
-                      <Text>View Comments</Text>
+                      <Text>{(reportComments[report.id]?.length || 0)}</Text>
                     </TouchableOpacity>
                   </View>
                   <View>
@@ -575,6 +634,95 @@ export default function HomeScreen() {
                     </View>
                   </View>
                 </View>
+
+                {/* Inline Comment Input */}
+                {commentingReportId === report.id && (
+                  <View style={styles.inlineCommentContainer}>
+                    <TextInput
+                      style={styles.inlineCommentInput}
+                      placeholder="Write your comment..."
+                      placeholderTextColor="#999"
+                      multiline={true}
+                      numberOfLines={3}
+                      value={commentText}
+                      onChangeText={setCommentText}
+                      editable={!submittingComment}
+                    />
+                    <View style={styles.inlineCommentButtons}>
+                      <TouchableOpacity
+                        style={styles.inlineCommentCancel}
+                        onPress={() => {
+                          setCommentingReportId(null);
+                          setCommentText("");
+                        }}
+                        disabled={submittingComment}
+                      >
+                        <Text style={styles.inlineCommentCancelText}>
+                          Cancel
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[
+                          styles.inlineCommentSubmit,
+                          submittingComment || !commentText.trim()
+                            ? styles.inlineCommentSubmitDisabled
+                            : {},
+                        ]}
+                        onPress={async () => {
+                          if (!commentText.trim() || !commentingReportId)
+                            return;
+
+                          try {
+                            setSubmittingComment(true);
+                            await addComment(
+                              commentingReportId,
+                              auth.currentUser!.uid,
+                              commentText.trim()
+                            );
+                            Alert.alert("Success", "Comment posted!");
+                            setCommentingReportId(null);
+                            setCommentText("");
+                            await loadHomeData();
+                          } catch (error) {
+                            console.error("Error posting comment:", error);
+                            Alert.alert("Error", "Failed to post comment");
+                          } finally {
+                            setSubmittingComment(false);
+                          }
+                        }}
+                        disabled={submittingComment || !commentText.trim()}
+                      >
+                        <Text style={styles.inlineCommentSubmitText}>
+                          {submittingComment ? "Posting..." : "Post"}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+
+                {/* Display Comments */}
+                {commentingReportId === report.id && reportComments[report.id] && reportComments[report.id].length > 0 && (
+                  <View style={styles.commentsSection}>
+                    <Text style={styles.commentsSectionTitle}>
+                      Comments ({reportComments[report.id].length})
+                    </Text>
+                    {reportComments[report.id].map((comment: any, index: number) => (
+                      <View key={index} style={styles.commentItem}>
+                        <View style={styles.commentHeader}>
+                          <Text style={styles.commentAuthor}>
+                            {comment.authorName || "Anonymous"}
+                          </Text>
+                          <Text style={styles.commentDate}>
+                            {comment.createdAt
+                              ? new Date(comment.createdAt).toLocaleDateString()
+                              : ""}
+                          </Text>
+                        </View>
+                        <Text style={styles.commentText}>{comment.text}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
               </View>
             ))
           ) : (
@@ -587,6 +735,7 @@ export default function HomeScreen() {
 
         {/* Removed 'You' section: verified report count will be shown in profile/dedicated page */}
       </ScrollView>
+
       <BottomNav />
     </View>
   );
@@ -762,6 +911,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#ecf0f1",
+    width: "100%",
   },
   reportInfo: {
     flex: 1,
@@ -846,5 +996,92 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#7f8c8d",
     marginTop: 5,
+  },
+  inlineCommentContainer: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#ecf0f1",
+    width: "100%",
+  },
+  inlineCommentInput: {
+    borderWidth: 1,
+    borderColor: "#bdc3c7",
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 10,
+    color: "#2c3e50",
+    textAlignVertical: "top",
+    minHeight: 80,
+    width: "100%",
+  },
+  inlineCommentButtons: {
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "flex-end",
+  },
+  inlineCommentCancel: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 6,
+    backgroundColor: "#ecf0f1",
+  },
+  inlineCommentCancelText: {
+    color: "#2c3e50",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  inlineCommentSubmit: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 6,
+    backgroundColor: "#3498db",
+  },
+  inlineCommentSubmitDisabled: {
+    backgroundColor: "#bdc3c7",
+  },
+  inlineCommentSubmitText: {
+    color: "white",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  commentsSection: {
+    marginTop: 15,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: "#ecf0f1",
+    width: "100%",
+  },
+  commentsSectionTitle: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#2c3e50",
+    marginBottom: 10,
+  },
+  commentItem: {
+    marginBottom: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  commentHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  commentAuthor: {
+    fontWeight: "600",
+    color: "#2c3e50",
+    fontSize: 13,
+  },
+  commentDate: {
+    fontSize: 11,
+    color: "#95a5a6",
+  },
+  commentText: {
+    color: "#34495e",
+    fontSize: 13,
+    lineHeight: 18,
   },
 });

@@ -20,13 +20,12 @@ service cloud.firestore {
       allow write: if isSignedIn() && request.auth.uid == userId;
     }
 
-    // Reports collection - authenticated users can read, anyone can create
+    // Reports collection - authenticated users can read/create/interact, only admins can delete
     match /reports/{reportId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn();
-      allow update: if isSignedIn() &&
-                       (request.auth.uid == resource.data.reportedBy || isAdmin());
-      allow delete: if isAdmin();
+      allow update: if isSignedIn();  // Allow all signed-in users to update (vote/comment/etc)
+      allow delete: if isAdmin();     // Only admins can delete
 
       // Comments subcollection within reports
       match /comments/{commentId} {

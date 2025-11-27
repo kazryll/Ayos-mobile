@@ -182,7 +182,7 @@ export const getNearbyReports = async () => {
 };
 
 // Fetch all reports (feed) with optional limit
-export const getAllReports = async (limit = 50) => {
+export const getAllReports = async (limitCount = 50) => {
   try {
     const q = query(collection(db, "reports"), orderBy("createdAt", "desc"));
     const snapshot = await getDocs(q);
@@ -196,7 +196,10 @@ export const getAllReports = async (limit = 50) => {
         updatedAt: data.updatedAt?.toDate?.() || new Date(),
       });
     });
-    return reports.slice(0, limit);
+    if (typeof limitCount === "number" && limitCount > 0) {
+      return reports.slice(0, limitCount);
+    }
+    return reports;
   } catch (error) {
     console.error("Error getting all reports:", error);
     return [];

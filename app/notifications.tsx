@@ -7,6 +7,7 @@ import {
 import { getUserProfile } from "@/services/userService";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
+import { collection, doc, getDoc, getDocs, limit, query, where } from "firebase/firestore";
 import React, { useCallback, useState } from "react";
 import {
     ActivityIndicator,
@@ -19,7 +20,7 @@ import {
     View,
 } from "react-native";
 import BottomNav from "../components/BottomNav";
-import { auth } from "../config/firebase";
+import { auth, db } from "../config/firebase";
 
 const HERO_HEIGHT = Dimensions.get("window").height * 0.1;
 
@@ -44,13 +45,21 @@ const formatDateTime = (value: any) => {
   });
 };
 
-const getFallbackName = (id?: string) => {
-  if (!id) return "Someone";
-  return id.includes("@") ? id.split("@")[0] : id;
+const getFirstName = (name?: string) => {
+  if (!name || typeof name !== "string") return null;
+  // Extract first name (first word before space, or entire string if single word)
+  const trimmed = name.trim();
+  if (!trimmed) return null;
+  const firstPart = trimmed.split(/\s+/)[0];
+  // Capitalize first letter, keep rest as-is (preserve casing like "McDonald")
+  if (firstPart) {
+    return firstPart.charAt(0).toUpperCase() + firstPart.slice(1);
+  }
+  return null;
 };
 
 const buildMessage = (notif: any) => {
-  const actor = notif.actorName || "Someone";
+  const actor = notif.actorName || "A user";
   switch (notif.type) {
     case "comment":
       return `${actor} commented: ${notif.payload?.text || ""}`;
@@ -81,20 +90,117 @@ export default function NotificationsScreen() {
       const list = await getNotificationsForUser(user.uid, 100);
       const enriched = await Promise.all(
         list.map(async (notif) => {
-          const actorId = notif.payload?.actorId;
-          if (!actorId) {
-            return { ...notif, actorName: "Someone" };
+          let actorId = notif.payload?.actorId;
+          
+          // For old notifications without actorId, try to get it from the comment
+          if (!actorId && notif.type === "comment" && notif.payload?.commentId && notif.payload?.reportId) {
+            try {
+              const commentDoc = await getDoc(
+                doc(db, "reports", notif.payload.reportId, "comments", notif.payload.commentId)
+              );
+              if (commentDoc.exists()) {
+                actorId = commentDoc.data().userId;
+              }
+            } catch (err) {
+              console.warn("Could not fetch comment for notification:", notif.id, err);
+            }
           }
+          
+          // For old vote notifications without actorId, try to get it from reportVotes
+          if (!actorId && (notif.type === "upvote" || notif.type === "downvote") && notif.payload?.reportId) {
+            try {
+              const voteType = notif.type === "upvote" ? "up" : "down";
+              const votesQuery = query(
+                collection(db, "reportVotes"),
+                where("reportId", "==", notif.payload.reportId),
+                where("vote", "==", voteType),
+                limit(1)
+              );
+              const votesSnapshot = await getDocs(votesQuery);
+              if (!votesSnapshot.empty) {
+                const voteData = votesSnapshot.docs[0].data();
+                if (voteData.userId) {
+                  actorId = voteData.userId;
+                  console.log(`🔍 Recovered actorId from vote for ${notif.type} notification: ${actorId}`);
+                }
+              }
+            } catch (err) {
+              console.warn("Could not fetch vote for notification:", notif.id, err);
+            }
+          }
+          
+          if (!actorId) {
+            // For verified notifications, there's no actor
+            if (notif.type === "verified") {
+              return { ...notif, actorName: "System" };
+            }
+            console.warn("Notification missing actorId:", notif.id, "type:", notif.type);
+            return { ...notif, actorName: "A user" };
+          }
+          
           try {
             const profile = await getUserProfile(actorId);
-            const actorName =
-              profile?.displayName ||
-              profile?.name ||
-              getFallbackName(actorId);
-            return { ...notif, actorName };
+            if (profile) {
+              // displayName is required during signup, so it should always exist
+              // Check displayName first (primary field), then name, then email
+              let fullName = profile.displayName || profile.name || profile.email;
+              
+              if (fullName && typeof fullName === "string" && fullName.trim()) {
+                const firstName = getFirstName(fullName.trim());
+                if (firstName) {
+                  console.log(`✅ Extracted firstName "${firstName}" from "${fullName}" for ${notif.type} notification, actorId: ${actorId}`);
+                  return { ...notif, actorName: firstName };
+                } else {
+                  console.warn(`⚠️ getFirstName returned null for "${fullName}" (actorId: ${actorId}, type: ${notif.type})`);
+                }
+              } else {
+                console.warn(`⚠️ No valid fullName found in profile (actorId: ${actorId}, type: ${notif.type})`, {
+                  displayName: profile.displayName,
+                  name: profile.name,
+                  email: profile.email,
+                  fullNameType: typeof fullName,
+                  fullNameValue: fullName,
+                });
+              }
+              // Log if we have a profile but couldn't extract a name
+              console.warn(`Profile found but no valid name for actorId: ${actorId}`, {
+                displayName: profile.displayName,
+                name: profile.name,
+                email: profile.email,
+                type: notif.type,
+              });
+            } else {
+              console.warn(`No profile found for actorId: ${actorId}, type: ${notif.type}`);
+            }
+            
+            // If profile doesn't exist or has no name, try to extract from actorId if it's an email
+            // (actorId is usually a Firebase UID, but check just in case)
+            if (actorId.includes("@")) {
+              const emailPrefix = actorId.split("@")[0];
+              const firstName = getFirstName(emailPrefix);
+              if (firstName) {
+                return { ...notif, actorName: firstName };
+              }
+            }
+            
+            // This should rarely happen since displayName is required during signup
+            // But if it does, we'll use a generic name
+            console.error(`Could not extract name for actorId: ${actorId}`, {
+              hasProfile: !!profile,
+              profileKeys: profile ? Object.keys(profile) : [],
+            });
+            return { ...notif, actorName: "A user" };
           } catch (error) {
-            console.warn("Could not load actor profile:", error);
-            return { ...notif, actorName: getFallbackName(actorId) };
+            console.error("Error loading actor profile:", error, "actorId:", actorId);
+            // Try to extract from actorId if it's an email
+            if (actorId.includes("@")) {
+              const emailPrefix = actorId.split("@")[0];
+              const firstName = getFirstName(emailPrefix);
+              if (firstName) {
+                return { ...notif, actorName: firstName };
+              }
+            }
+            return { ...notif, actorName: "A user" };
           }
         })
       );

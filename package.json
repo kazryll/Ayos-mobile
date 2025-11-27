@@ -9,7 +9,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "deploy": "npx expo export --platform web && copy assets\\Ayos-logo.png dist\\icon-192.png && copy assets\\Ayos-logo.png dist\\icon-512.png && firebase deploy --only hosting"
+    "deploy": "npx expo export --platform web && copy assets\\Ayos-logo.png dist\\icon-192.png && copy assets\\Ayos-logo.png dist\\icon-512.png && copy assets\\Ayos-logo.png dist\\favicon.png && copy assets\\Ayos-logo.png dist\\favicon.ico && copy assets\\Ayos-logo.png dist\\apple-touch-icon.png && firebase deploy --only hosting"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",

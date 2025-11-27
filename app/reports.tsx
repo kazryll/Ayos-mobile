@@ -36,6 +36,25 @@ const chartBarIcon = require("@/assets/icons/chart-bar.png");
 
 const HERO_HEIGHT = Dimensions.get("window").height * 0.1;
 
+const formatShortDate = (value: any) => {
+  let date: Date;
+  if (value && typeof value.toDate === "function") {
+    date = value.toDate();
+  } else if (value instanceof Date) {
+    date = value;
+  } else {
+    date = new Date(value);
+  }
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
 const statusFilters = [
   { key: "all", label: "All" },
   { key: "for_approval", label: "For Approval" },
@@ -383,9 +402,7 @@ export default function ReportsPage() {
             />
             <Text style={styles.footerPillText}>{votes} votes</Text>
           </View>
-          <Text style={styles.cardDate}>
-            {new Date(item.createdAt).toLocaleString()}
-          </Text>
+          <Text style={styles.cardDate}>{formatShortDate(item.createdAt)}</Text>
         </View>
 
         <View style={styles.actionRow}>
@@ -467,9 +484,7 @@ export default function ReportsPage() {
                       {comment.authorName || "User"}
                     </Text>
                     <Text style={styles.commentDate}>
-                      {comment.createdAt?.toLocaleString
-                        ? comment.createdAt.toLocaleString()
-                        : new Date(comment.createdAt).toLocaleString()}
+                      {formatShortDate(comment.createdAt)}
                     </Text>
                   </View>
                   <Text style={styles.commentBody}>{comment.text}</Text>

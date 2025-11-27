@@ -1,8 +1,5 @@
 // screens/HomeScreen.tsx
-import {
-  getNotificationsForUser,
-  markNotificationRead,
-} from "@/services/notifications";
+import { getNotificationsForUser } from "@/services/notifications";
 import {
   getAllReports,
   getComments,
@@ -61,7 +58,6 @@ export default function HomeScreen() {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState<any[]>([]);
-  const [notifOpen, setNotifOpen] = useState(false);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [userVotes, setUserVotes] = useState<{ [key: string]: string }>({});
   const [votingReportId, setVotingReportId] = useState<string | null>(null);
@@ -528,16 +524,7 @@ export default function HomeScreen() {
 
             {/* Notification on Right */}
             <TouchableOpacity
-              onPress={async () => {
-                setNotifOpen(!notifOpen);
-                if (!notifOpen) {
-                  const user = auth.currentUser;
-                  if (user) {
-                    const notifs = await getNotificationsForUser(user.uid);
-                    setNotifications(notifs);
-                  }
-                }
-              }}
+              onPress={() => router.push("/notifications" as any)}
               style={styles.notificationButton}
             >
               <Image
@@ -549,50 +536,6 @@ export default function HomeScreen() {
               </Text>
             </TouchableOpacity>
           </View>
-
-          {/* Notifications Dropdown */}
-          {notifOpen && (
-            <View
-              style={{
-                backgroundColor: "rgba(255,255,255,0.95)",
-                padding: 10,
-                marginHorizontal: 20,
-                marginBottom: 12,
-                borderRadius: 8,
-              }}
-            >
-              {notifications.length === 0 ? (
-                <Text style={{ color: "#2c3e50" }}>No notifications</Text>
-              ) : (
-                notifications.map((n) => (
-                  <TouchableOpacity
-                    key={n.id}
-                    onPress={async () => {
-                      try {
-                        await markNotificationRead(n.id);
-                        const user = auth.currentUser;
-                        if (user) {
-                          const updated = await getNotificationsForUser(user.uid);
-                          setNotifications(updated);
-                        }
-                      } catch (e) {
-                        console.warn(e);
-                      }
-                    }}
-                    style={{ paddingVertical: 6 }}
-                  >
-                    <Text style={{ fontWeight: n.read ? "normal" : "bold" }}>
-                      {n.type} •{" "}
-                      {n.payload?.reportId ? `Report ${n.payload.reportId}` : ""}
-                    </Text>
-                    <Text style={{ color: "#7f8c8d", fontSize: 12 }}>
-                      {new Date(n.createdAt).toLocaleString()}
-                    </Text>
-                  </TouchableOpacity>
-                ))
-              )}
-            </View>
-          )}
         </View>
 
         {/* Your Impact Card - Redesigned */}

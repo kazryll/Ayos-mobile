@@ -228,7 +228,7 @@ export const addComment = async (reportId, userId, text) => {
           await addDoc(collection(db, "notifications"), {
             userId: ownerId,
             type: "comment",
-            payload: { reportId, commentId: docRef.id, text },
+            payload: { reportId, commentId: docRef.id, text, actorId: userId },
             read: false,
             createdAt: serverTimestamp(),
           });
@@ -341,21 +341,21 @@ export const voteReport = async (reportId, userId, voteType) => {
     }
 
     // Create notification for upvote
-    if (voteType === "up" && prevVote !== "up") {
+    if ((voteType === "up" && prevVote !== "up") || (voteType === "down" && prevVote !== "down")) {
       try {
         const reportData = reportSnap.data();
         const ownerId = reportData.reportedBy;
         if (ownerId && ownerId !== userId) {
           await addDoc(collection(db, "notifications"), {
             userId: ownerId,
-            type: "upvote",
-            payload: { reportId },
+            type: voteType === "up" ? "upvote" : "downvote",
+            payload: { reportId, actorId: userId },
             read: false,
             createdAt: serverTimestamp(),
           });
         }
       } catch (notifErr) {
-        console.warn("Could not create upvote notification:", notifErr);
+        console.warn("Could not create vote notification:", notifErr);
       }
     }
 

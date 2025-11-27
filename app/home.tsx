@@ -56,7 +56,9 @@ export default function HomeScreen() {
   const [notifOpen, setNotifOpen] = useState(false);
   const [userVotes, setUserVotes] = useState<{ [key: string]: string }>({});
   const [votingReportId, setVotingReportId] = useState<string | null>(null);
-  const [submittingVote, setSubmittingVote] = useState<{ [key: string]: boolean }>({});
+  const [submittingVote, setSubmittingVote] = useState<{
+    [key: string]: boolean;
+  }>({});
   const [commentingReportId, setCommentingReportId] = useState<string | null>(
     null
   );

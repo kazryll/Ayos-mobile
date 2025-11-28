@@ -49,7 +49,7 @@ export default function SignInScreen() {
       />
 
       {/* Title */}
-      <Text style={styles.title}>Login to your account</Text>
+      <Text style={styles.title}>Log in to your account</Text>
 
       {/* Email Input */}
       <TextInput
@@ -81,7 +81,7 @@ export default function SignInScreen() {
         disabled={loading}
       >
         <Text style={styles.buttonText}>
-          {loading ? "Logging in..." : "Login"}
+          {loading ? "Logging in..." : "Sign in"}
         </Text>
       </TouchableOpacity>
 

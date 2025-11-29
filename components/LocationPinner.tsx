@@ -3,17 +3,21 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as Location from "expo-location";
 import React, { useEffect, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import theme from "../config/theme";
 import barangayBoundaries from "../data/baguioBarangayBoundaries.json";
-import { findBarangayByCoordinates, isWithinBaguioCity, type BarangayBoundary } from "../utils/barangayUtils";
+import {
+  findBarangayByCoordinates,
+  isWithinBaguioCity,
+  type BarangayBoundary,
+} from "../utils/barangayUtils";
 
 interface LocationPinnerProps {
   onLocationConfirm: (location: {
@@ -65,8 +69,12 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({
   const [scriptError, setScriptError] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isGeocodingAddress, setIsGeocodingAddress] = useState(false);
-  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
+  const [mapCenter, setMapCenter] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
   const [showBoundaries, setShowBoundaries] = useState(false);
+  const [googleAPIReady, setGoogleAPIReady] = useState(typeof window !== "undefined" && !!(window as any).google?.maps);
 
   const mapRef = useRef<google.maps.Map | null>(null);
   const markerRef = useRef<google.maps.Marker | null>(null);
@@ -213,9 +221,12 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({
 
   const handleMapLoad = () => {
     console.log("🗺️ Google Maps script loaded successfully!");
-    setScriptLoaded(true);
-    setMapLoading(false);
-    setScriptError(false);
+    if (!scriptLoaded) {
+      setScriptLoaded(true);
+      setMapLoading(false);
+      setScriptError(false);
+      setGoogleAPIReady(true);
+    }
   };
 
   const handleScriptError = () => {
@@ -494,31 +505,94 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({
                 </View>
               )}
 
-              <LoadScript
-                googleMapsApiKey={GOOGLE_MAPS_API_KEY}
-                onLoad={handleMapLoad}
-                onError={handleScriptError}
-                loadingElement={<View style={styles.mapLoader} />}
-              >
-                {scriptLoaded ? (
-                  <GoogleMap
-                    mapContainerStyle={mapContainerStyle}
-                    center={mapCenter || defaultCenter}
-                    zoom={15}
-                    onClick={handleMapClick}
-                    onLoad={(map) => {
-                      mapRef.current = map;
-                    }}
-                    options={{
-                      streetViewControl: false,
-                      mapTypeControl: false,
-                      fullscreenControl: false,
-                      zoomControl: true,
-                      gestureHandling: "greedy",
-                    }}
-                  >
-                    {/* Barangay Boundaries */}
-                    {showBoundaries && barangayBoundaries.map((barangay) => {
+              {!googleAPIReady ? (
+                <LoadScript
+                  googleMapsApiKey={GOOGLE_MAPS_API_KEY}
+                  onLoad={handleMapLoad}
+                  onError={handleScriptError}
+                  loadingElement={<View style={styles.mapLoader} />}
+                >
+                  {scriptLoaded ? (
+                    <GoogleMap
+                      mapContainerStyle={mapContainerStyle}
+                      center={mapCenter || defaultCenter}
+                      zoom={15}
+                      onClick={handleMapClick}
+                      onLoad={(map) => {
+                        mapRef.current = map;
+                      }}
+                      options={{
+                        streetViewControl: false,
+                        mapTypeControl: false,
+                        fullscreenControl: false,
+                        zoomControl: true,
+                        gestureHandling: "greedy",
+                      }}
+                    >
+                      {/* Barangay Boundaries */}
+                      {showBoundaries &&
+                        barangayBoundaries.map((barangay) => {
+                          // Extract coordinates from the GeoJSON structure
+                          const coordinates = barangay.boundingBox.coordinates;
+
+                          // Convert to Google Maps format [lat, lng]
+                          const paths = coordinates.map((coord: number[]) => ({
+                            lat: coord[1],
+                            lng: coord[0],
+                          }));
+
+                          return (
+                            <Polygon
+                              key={barangay.name}
+                              paths={paths}
+                              options={{
+                                fillColor: "#4285F4",
+                                fillOpacity: 0.1,
+                                strokeColor: "#4285F4",
+                                strokeOpacity: 0.6,
+                                strokeWeight: 2,
+                                clickable: false,
+                              }}
+                            />
+                          );
+                        })}
+
+                      {/* Marker for selected location */}
+                      {selectedLocation && (
+                        <Marker
+                          position={{
+                            lat: selectedLocation.latitude,
+                            lng: selectedLocation.longitude,
+                          }}
+                        />
+                      )}
+                    </GoogleMap>
+                  ) : (
+                    renderMapFallback()
+                  )}
+                </LoadScript>
+              ) : (
+                <GoogleMap
+                  mapContainerStyle={mapContainerStyle}
+                  center={mapCenter || defaultCenter}
+                  zoom={15}
+                  onClick={handleMapClick}
+                  onLoad={(map) => {
+                    mapRef.current = map;
+                    setScriptLoaded(true);
+                    setMapLoading(false);
+                  }}
+                  options={{
+                    streetViewControl: false,
+                    mapTypeControl: false,
+                    fullscreenControl: false,
+                    zoomControl: true,
+                    gestureHandling: "greedy",
+                  }}
+                >
+                  {/* Barangay Boundaries */}
+                  {showBoundaries &&
+                    barangayBoundaries.map((barangay) => {
                       // Extract coordinates from the GeoJSON structure
                       const coordinates = barangay.boundingBox.coordinates;
 
@@ -544,20 +618,17 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({
                       );
                     })}
 
-                    {/* Marker for selected location */}
-                    {selectedLocation && (
-                      <Marker
-                        position={{
-                          lat: selectedLocation.latitude,
-                          lng: selectedLocation.longitude,
-                        }}
-                      />
-                    )}
-                  </GoogleMap>
-                ) : (
-                  renderMapFallback()
-                )}
-              </LoadScript>
+                  {/* Marker for selected location */}
+                  {selectedLocation && (
+                    <Marker
+                      position={{
+                        lat: selectedLocation.latitude,
+                        lng: selectedLocation.longitude,
+                      }}
+                    />
+                  )}
+                </GoogleMap>
+              )}
 
               <View style={styles.mapButtonsContainer}>
                 <TouchableOpacity

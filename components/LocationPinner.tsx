@@ -74,7 +74,9 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({
     lng: number;
   } | null>(null);
   const [showBoundaries, setShowBoundaries] = useState(false);
-  const [googleAPIReady, setGoogleAPIReady] = useState(typeof window !== "undefined" && !!(window as any).google?.maps);
+  const [googleAPIReady, setGoogleAPIReady] = useState(
+    typeof window !== "undefined" && !!(window as any).google?.maps
+  );
 
   const mapRef = useRef<google.maps.Map | null>(null);
   const markerRef = useRef<google.maps.Marker | null>(null);

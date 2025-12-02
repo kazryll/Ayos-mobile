@@ -67,28 +67,22 @@ export default function ActivityScreen() {
   const applyFilter = (filter: string, list?: any[]) => {
     const source = list ?? reports;
     let out = source;
-    switch (filter) {
-      case "pending":
-        out = source.filter(
-          (r) => (r.status || "pending").toLowerCase() === "pending"
-        );
-        break;
-      case "in-progress":
-      case "inprogress":
-      case "in progress":
-        out = source.filter(
-          (r) => (r.status || "pending").toLowerCase() === "in-progress"
-        );
-        break;
-      case "resolved":
-        out = source.filter(
-          (r) => (r.status || "pending").toLowerCase() === "resolved"
-        );
-        break;
-      default:
-        out = source; // all
+    
+    // Special case: "all" filter shows everything
+    if (filter === "all") {
+      out = source;
+    } else {
+      // Normalize status by converting underscores to hyphens and lowercasing
+      const normalizeStatus = (status: string) => 
+        (status || "for_approval")
+          .toLowerCase()
+          .replace(/_/g, "-");
+      
+      const filterKey = normalizeStatus(filter);
+      
+      out = source.filter((r) => normalizeStatus(r.status) === filterKey);
     }
-
+    
     setFilteredReports(out);
     setActiveFilter(filter);
   };
@@ -102,7 +96,7 @@ export default function ActivityScreen() {
       <TouchableOpacity style={styles.reportItem} onPress={() => {}}>
         <View style={styles.reportInfo}>
           <View style={styles.reportHeader}>
-            <Text style={styles.reportTitle}>{item.title || "Untitled"}</Text>
+            <Text style={styles.reportTitle}>{item.aiGeneratedAnalysis?.title || "Untitled"}</Text>
             <View
               style={[
                 styles.categoryBadge,
@@ -110,7 +104,7 @@ export default function ActivityScreen() {
               ]}
             >
               <Text style={styles.categoryBadgeText}>
-                {item.category || "General"}
+                {item.aiGeneratedAnalysis?.category || "General"}
               </Text>
             </View>
           </View>
@@ -133,11 +127,17 @@ export default function ActivityScreen() {
               ? styles.resolvedBadge
               : item.status === "in-progress"
               ? styles.inProgressBadge
+              : item.status === "approved"
+              ? styles.approvedBadge
+              : item.status === "for_approval"
+              ? styles.forApprovalBadge
+              : item.status === "rejected"
+              ? styles.rejectedBadge
               : styles.pendingBadge,
           ]}
         >
           <Text style={styles.statusText}>
-            {(item.status || "pending")
+            {(item.status || "for_approval")
               .replace(/-/g, " ")
               .replace(/\b\w/g, (c: string) => c.toUpperCase())}
           </Text>
@@ -189,18 +189,18 @@ export default function ActivityScreen() {
             </View>
             <View style={styles.metricItem}>
               <Text style={styles.metricNumber}>{getTotalViews()}</Text>
-              <Text style={styles.metricLabel}>
-                Total Views
-              </Text>
+              <Text style={styles.metricLabel}>Total Views</Text>
             </View>
           </View>
         </LinearGradient>
 
-        {/* Category Filter */}
+        {/* Category Filter (includes LGU statuses for user's own reports) */}
         <View style={styles.filterContainer}>
           {[
             { key: "all", label: "All" },
-            { key: "pending", label: "Pending" },
+            { key: "for_approval", label: "For Approval" },
+            { key: "approved", label: "Approved" },
+            { key: "rejected", label: "Rejected" },
             { key: "in-progress", label: "In Progress" },
             { key: "resolved", label: "Resolved" },
           ].map((f) => (
@@ -368,6 +368,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 12,
+  },
+  forApprovalBadge: {
+    backgroundColor: "#F5A524",
+  },
+  approvedBadge: {
+    backgroundColor: "#00B894",
+  },
+  rejectedBadge: {
+    backgroundColor: "#E74C3C",
   },
   pendingBadge: {
     backgroundColor: "#FFD966",

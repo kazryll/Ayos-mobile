@@ -362,12 +362,12 @@ export default function HomeScreen() {
   };
 
   const getReportStatus = (report: any) => {
-    const status = report && report.status ? report.status : "pending";
+    const status = report && report.status ? report.status : "for_approval";
     return status.charAt(0).toUpperCase() + status.slice(1);
   };
 
   const getStatusBadgeStyle = (report: any) => {
-    const status = report && report.status ? report.status : "pending";
+    const status = report && report.status ? report.status : "for_approval";
     switch (status) {
       case "resolved":
         return styles.resolvedBadge;

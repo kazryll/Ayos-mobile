@@ -55,16 +55,18 @@ const formatShortDate = (value: any) => {
   });
 };
 
+// Community Reports should show only LGU-approved reports. Keep minimal filters here.
 const statusFilters = [
   { key: "all", label: "All" },
-  { key: "pending", label: "Pending" },
   { key: "in-progress", label: "In-Progress" },
   { key: "resolved", label: "Resolved" },
 ];
 
 const statusColors: Record<string, string> = {
-  pending: "#FBC02D",
+  for_approval: "#F5A524",
+  approved: "#00B894",
   "in-progress": "#42A5F5",
+  rejected: "#E74C3C",
   resolved: "#2ECC71",
   default: "#B0BEC5",
 };
@@ -193,16 +195,19 @@ export default function ReportsPage() {
 
   const filteredReports = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    const applyStatus = (reportStatus: string) => {
-      if (statusFilter === "all") return true;
-      return (reportStatus || "pending").toLowerCase() === statusFilter;
-    };
+    const normalizeKey = (s: string) =>
+      (s || "")
+        .toString()
+        .toLowerCase()
+        .replace(/[_\-\s]/g, "");
 
-    return reports
+    // Community Reports must only show LGU-approved reports to users
+    const approvedOnly = reports.filter(
+      (r) => normalizeKey(r.status) === "approved"
+    );
+
+    return approvedOnly
       .filter((report) => {
-        const normalizedStatus = (report.status || "pending").toLowerCase();
-        if (!applyStatus(normalizedStatus)) return false;
-
         if (!q) return true;
         const haystack = [
           report.aiGeneratedAnalysis?.title,
@@ -366,16 +371,18 @@ export default function ReportsPage() {
 
   const renderItem = ({ item }: { item: any }) => {
     const votes = (item.upvotes || 0) + (item.downvotes || 0);
-    const statusKey = (item.status || "pending").toLowerCase();
+    const statusKey = (item.status || "for_approval").toLowerCase();
     const badgeColor = statusColors[statusKey] || statusColors.default;
     const userVote = userVotes[item.id];
     const commentsOpen = commentingReportId === item.id;
-    const statusLabel = (item.status || "pending")
-      .split("-")
-      .map(
-        (segment: string) => segment.charAt(0).toUpperCase() + segment.slice(1)
+    const statusLabel = ((item.status || "for_approval") as string)
+      .replace(/[_\-]/g, " ")
+      .split(" ")
+      .map((segment: string) =>
+        segment ? segment.charAt(0).toUpperCase() + segment.slice(1) : ""
       )
-      .join(" ");
+      .join(" ")
+      .trim();
 
     return (
       <View style={styles.card}>

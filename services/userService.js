@@ -15,7 +15,7 @@ export const getUserStats = async (userId) => {
 
     return {
       totalReports: reports.length,
-      pendingReports: reports.filter((r) => r.status === "pending").length,
+      pendingReports: reports.filter((r) => r.status === "in-progress").length,
       inProgressReports: reports.filter((r) => r.status === "in-progress")
         .length,
       resolvedReports: reports.filter((r) => r.status === "resolved").length,

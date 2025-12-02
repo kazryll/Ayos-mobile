@@ -121,7 +121,7 @@ export const submitReport = async (reportData, userId = null) => {
       reportedBy: userId || "anonymous", // string
       assignedTo: assignedTo, // string | undefined (barangay LGU based on location)
       createdAt: serverTimestamp(), // Firestore Timestamp
-      status: "pending", // "pending" | "in-progress" | "resolved" | "closed" | "rejected"
+      status: "for_approval", // "for_approval" | "approved" | "in-progress" | "resolved" | "closed" | "rejected"
 
       // location object with all required fields
       location: {

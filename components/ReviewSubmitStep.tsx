@@ -195,9 +195,15 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({
         </View>
 
         <View style={styles.aiNote}>
-          <Text style={styles.aiNoteText}>
-            ℹ️ AI will analyze and categorize your report upon submission
-          </Text>
+          <View style={styles.aiNoteContent}>
+            <Image
+              source={require("../assets/icons/information.png")}
+              style={styles.aiNoteImage}
+            />
+            <Text style={styles.aiNoteText}>
+              AI will analyze and categorize your report upon submission
+            </Text>
+          </View>
         </View>
       </View>
 
@@ -448,11 +454,22 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginTop: 12,
   },
+  aiNoteContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  aiNoteImage: {
+    width: 36,
+    height: 36,
+    marginRight: 12,
+    resizeMode: "contain",
+  },
   aiNoteText: {
     color: "#1976D2",
     fontSize: 13,
-    textAlign: "center",
+    textAlign: "left",
     fontWeight: "500",
+    flex: 1,
   },
 });
 

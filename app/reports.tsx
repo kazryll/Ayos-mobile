@@ -354,12 +354,8 @@ export default function ReportsPage() {
     try {
       await addComment(commentingReportId, user.uid, text);
       setCommentText("");
+      // reload comments for accurate display and count (avoids race conditions)
       await loadCommentsForReport(commentingReportId);
-      setCommentCounts((prev) => {
-        const next = { ...prev };
-        next[commentingReportId] = (next[commentingReportId] || 0) + 1;
-        return next;
-      });
     } catch (err) {
       console.error("Error adding comment:", err);
       Alert.alert("Error", "Failed to add comment. Please try again.");

@@ -195,7 +195,12 @@ export default function ActivityScreen() {
         </LinearGradient>
 
         {/* Category Filter (includes LGU statuses for user's own reports) */}
-        <View style={styles.filterContainer}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterScrollContent}
+          style={styles.filterScroll}
+        >
           {[
             { key: "all", label: "All" },
             { key: "for_approval", label: "For Approval" },
@@ -222,7 +227,7 @@ export default function ActivityScreen() {
               </Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
 
         {/* Reports List */}
         <View style={styles.section}>
@@ -296,17 +301,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "rgba(255,255,255,0.86)",
   },
-  filterContainer: {
-    flexDirection: "row",
-    padding: 12,
-    gap: 8,
-    justifyContent: "space-around",
+  filterScroll: {
+    paddingVertical: 8,
+  },
+  filterScrollContent: {
+    paddingHorizontal: 12,
+    alignItems: "center",
   },
   filterButton: {
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 20,
     backgroundColor: "#fff",
+    marginRight: 8,
   },
   filterButtonActive: {
     backgroundColor: theme.Colors.primary,
@@ -346,9 +353,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   categoryBadge: {
-    paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 8,
+    borderRadius: 8,
     marginLeft: 8,
   },
   categoryBadgeText: {
@@ -358,6 +365,7 @@ const styles = StyleSheet.create({
   reportLocation: {
     color: "#6C757D",
     fontSize: 13,
+    marginTop: 4,
   },
   reportDate: {
     color: "#6C757D",
@@ -382,13 +390,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFD966",
   },
   inProgressBadge: {
-    backgroundColor: "#D1E8FF",
+    backgroundColor: "#3B82F6",
   },
   resolvedBadge: {
-    backgroundColor: "#DFF7E0",
+    backgroundColor: "#10B981",
   },
   statusText: {
     fontWeight: "700",
+    color: "white",
   },
   noReportsContainer: {
     padding: 20,

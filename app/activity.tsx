@@ -67,22 +67,20 @@ export default function ActivityScreen() {
   const applyFilter = (filter: string, list?: any[]) => {
     const source = list ?? reports;
     let out = source;
-    
+
     // Special case: "all" filter shows everything
     if (filter === "all") {
       out = source;
     } else {
       // Normalize status by converting underscores to hyphens and lowercasing
-      const normalizeStatus = (status: string) => 
-        (status || "for_approval")
-          .toLowerCase()
-          .replace(/_/g, "-");
-      
+      const normalizeStatus = (status: string) =>
+        (status || "for_approval").toLowerCase().replace(/_/g, "-");
+
       const filterKey = normalizeStatus(filter);
-      
+
       out = source.filter((r) => normalizeStatus(r.status) === filterKey);
     }
-    
+
     setFilteredReports(out);
     setActiveFilter(filter);
   };
@@ -96,7 +94,9 @@ export default function ActivityScreen() {
       <TouchableOpacity style={styles.reportItem} onPress={() => {}}>
         <View style={styles.reportInfo}>
           <View style={styles.reportHeader}>
-            <Text style={styles.reportTitle}>{item.aiGeneratedAnalysis?.title || "Untitled"}</Text>
+            <Text style={styles.reportTitle}>
+              {item.aiGeneratedAnalysis?.title || "Untitled"}
+            </Text>
             <View
               style={[
                 styles.categoryBadge,

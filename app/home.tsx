@@ -4,9 +4,13 @@ import {
   getAllReports,
   getComments,
   getUserVoteForReport,
-  voteReport
+  voteReport,
 } from "@/services/reports";
-import { getLeaderboard, getUserProfile, getUserStats } from "@/services/userService";
+import {
+  getLeaderboard,
+  getUserProfile,
+  getUserStats,
+} from "@/services/userService";
 import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -21,7 +25,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import { WebView } from "react-native-webview";
 import BottomNav from "../components/BottomNav";
@@ -117,7 +121,12 @@ export default function HomeScreen() {
 
   // Top reports derived by total votes (up + down), top 3
   const topReports = [...feedReports]
-    .sort((a, b) => (b.upvotes || 0) + (b.downvotes || 0) - ((a.upvotes || 0) + (a.downvotes || 0)))
+    .sort(
+      (a, b) =>
+        (b.upvotes || 0) +
+        (b.downvotes || 0) -
+        ((a.upvotes || 0) + (a.downvotes || 0))
+    )
     .slice(0, 3);
 
   const mapHtml = useMemo(() => {
@@ -518,7 +527,11 @@ export default function HomeScreen() {
         <View style={styles.stickyHeader}>
           <View style={styles.headerBar}>
             <View style={styles.headerLeft}>
-              <Image source={ayosLogo} style={styles.logoImage} resizeMode="contain" />
+              <Image
+                source={ayosLogo}
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
               <Text style={styles.greetingText}>Hi, {getDisplayName()}!</Text>
             </View>
 
@@ -544,7 +557,10 @@ export default function HomeScreen() {
             <View style={styles.yourImpactContent}>
               <View style={styles.yourImpactLeft}>
                 <View style={styles.yourImpactIcon}>
-                  <Image source={paperIcon} style={{ width: 20, height: 20, tintColor: "white" }} />
+                  <Image
+                    source={paperIcon}
+                    style={{ width: 20, height: 20, tintColor: "white" }}
+                  />
                 </View>
                 <View>
                   <Text style={styles.yourImpactLabel}>Your Impact</Text>
@@ -578,13 +594,22 @@ export default function HomeScreen() {
             </Text>
             <View style={styles.rewardBadgesRow}>
               <View style={styles.rewardBadge}>
-                <Image source={require("@/assets/icons/foodpanda.png")} style={{ width: 20, height: 20 }} />
+                <Image
+                  source={require("@/assets/icons/foodpanda.png")}
+                  style={{ width: 20, height: 20 }}
+                />
               </View>
               <View style={styles.rewardBadge}>
-                <Image source={require("@/assets/icons/grab.png")} style={{ width: 20, height: 20 }} />
+                <Image
+                  source={require("@/assets/icons/grab.png")}
+                  style={{ width: 20, height: 20 }}
+                />
               </View>
               <View style={styles.rewardBadge}>
-                <Image source={require("@/assets/icons/sm.png")} style={{ width: 20, height: 20 }} />
+                <Image
+                  source={require("@/assets/icons/sm.png")}
+                  style={{ width: 20, height: 20 }}
+                />
               </View>
             </View>
           </View>
@@ -633,80 +658,141 @@ export default function HomeScreen() {
           </View>
           <View style={styles.issuesLegend}>
             <View style={styles.legendItem}>
-              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#167048", marginRight: 6 }} />
+              <View
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 4,
+                  backgroundColor: "#167048",
+                  marginRight: 6,
+                }}
+              />
               <Text style={styles.legendText}>You</Text>
             </View>
             <View style={styles.legendItem}>
-              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#FFD93D", marginRight: 6 }} />
+              <View
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 4,
+                  backgroundColor: "#FFD93D",
+                  marginRight: 6,
+                }}
+              />
               <Text style={styles.legendText}>Pending</Text>
             </View>
             <View style={styles.legendItem}>
-              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#3498db", marginRight: 6 }} />
+              <View
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 4,
+                  backgroundColor: "#3498db",
+                  marginRight: 6,
+                }}
+              />
               <Text style={styles.legendText}>In-Progress</Text>
             </View>
             <View style={styles.legendItem}>
-              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#51CF66", marginRight: 6 }} />
+              <View
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 4,
+                  backgroundColor: "#51CF66",
+                  marginRight: 6,
+                }}
+              />
               <Text style={styles.legendText}>Resolved</Text>
             </View>
           </View>
         </View>
 
-        
-
         {/* Top Reports Section */}
         <View style={styles.section}>
-          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
-            <Image source={chartBarIcon} style={{ width: 20, height: 20, marginRight: 8, tintColor: theme.Colors.primary }} />
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginBottom: 12,
+            }}
+          >
+            <Image
+              source={chartBarIcon}
+              style={{
+                width: 20,
+                height: 20,
+                marginRight: 8,
+                tintColor: theme.Colors.primary,
+              }}
+            />
             <Text style={styles.sectionTitle}>Top Reports</Text>
-            <TouchableOpacity style={{ marginLeft: "auto" }} onPress={() => router.push("/reports" as any)}>
+            <TouchableOpacity
+              style={{ marginLeft: "auto" }}
+              onPress={() => router.push("/reports" as any)}
+            >
               <Text style={styles.viewAllText}>View All</Text>
             </TouchableOpacity>
           </View>
 
           {topReports.map((report, idx) => (
-              <View
-                key={report.id}
-                style={[
-                  styles.reportItem,
-                  { flexDirection: "column", alignItems: "flex-start" },
-                ]}
-              >
-                <View style={{ width: "100%" }}>
-                  <View style={styles.reportHeader}>
-                    <Text style={styles.reportTitle}>
-                      {report.aiGeneratedAnalysis?.title ||
-                        report.originalDescription?.slice(0, 80) ||
-                        "Untitled"}
+            <View
+              key={report.id}
+              style={[
+                styles.reportItem,
+                { flexDirection: "column", alignItems: "flex-start" },
+              ]}
+            >
+              <View style={{ width: "100%" }}>
+                <View style={styles.reportHeader}>
+                  <Text style={styles.reportTitle}>
+                    {report.aiGeneratedAnalysis?.title ||
+                      report.originalDescription?.slice(0, 80) ||
+                      "Untitled"}
+                  </Text>
+                  <View
+                    style={[
+                      styles.categoryBadge,
+                      { backgroundColor: getCategoryColor(report) },
+                    ]}
+                  >
+                    <Text style={styles.categoryBadgeText}>
+                      {report.aiGeneratedAnalysis?.category || "General"}
                     </Text>
-                    <View
-                      style={[
-                        styles.categoryBadge,
-                        { backgroundColor: getCategoryColor(report) },
-                      ]}
-                    >
-                      <Text style={styles.categoryBadgeText}>
-                        {report.aiGeneratedAnalysis?.category || "General"}
-                      </Text>
-                    </View>
                   </View>
-                  <Text style={styles.reportLocation}>
-                    {report.authorFirstName} •{" "}
-                    {new Date(report.createdAt).toLocaleString()}
-                  </Text>
-                  <Text style={{ marginTop: 8, color: "#34495e" }}>
-                    {report.aiGeneratedAnalysis?.summary ||
-                      report.originalDescription}
-                  </Text>
                 </View>
+                <Text style={styles.reportLocation}>
+                  {report.authorFirstName} •{" "}
+                  {new Date(report.createdAt).toLocaleString()}
+                </Text>
+                <Text style={{ marginTop: 8, color: "#34495e" }}>
+                  {report.aiGeneratedAnalysis?.summary ||
+                    report.originalDescription}
+                </Text>
               </View>
-            ))}
+            </View>
+          ))}
         </View>
 
         {/* Removed 'You' section: verified report count will be shown in profile/dedicated page */}
         {/* Leaderboard Section (database-driven) */}
         <View style={styles.section}>
-          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
-            <Image source={trophyIcon} style={{ width: 20, height: 20, marginRight: 8, tintColor: theme.Colors.primary }} />
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginBottom: 12,
+            }}
+          >
+            <Image
+              source={trophyIcon}
+              style={{
+                width: 20,
+                height: 20,
+                marginRight: 8,
+                tintColor: theme.Colors.primary,
+              }}
+            />
             <Text style={styles.leaderboardTitle}>Leaderboard</Text>
           </View>
           {leaderboard.length === 0 ? (
@@ -715,15 +801,31 @@ export default function HomeScreen() {
             </View>
           ) : (
             leaderboard.map((entry: any, idx: number) => (
-              <View key={entry.userId} style={[styles.leaderboardCard, { marginBottom: 12 }]}>
-                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+              <View
+                key={entry.userId}
+                style={[styles.leaderboardCard, { marginBottom: 12 }]}
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
                     <View style={styles.leaderboardAvatar}>
-                      <Text style={styles.leaderboardAvatarText}>{(entry.displayName || "?").slice(0,2).toUpperCase()}</Text>
+                      <Text style={styles.leaderboardAvatarText}>
+                        {(entry.displayName || "?").slice(0, 2).toUpperCase()}
+                      </Text>
                     </View>
                     <View style={{ marginLeft: 12 }}>
-                      <Text style={styles.leaderboardUserName}>{entry.displayName}</Text>
-                      <Text style={styles.leaderboardPoints}>{entry.verifiedReports} verified reports • {entry.points} pts</Text>
+                      <Text style={styles.leaderboardUserName}>
+                        {entry.displayName}
+                      </Text>
+                      <Text style={styles.leaderboardPoints}>
+                        {entry.verifiedReports} verified reports •{" "}
+                        {entry.points} pts
+                      </Text>
                     </View>
                   </View>
                   <View style={{ alignItems: "flex-end" }}>

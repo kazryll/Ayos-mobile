@@ -57,18 +57,14 @@ const formatShortDate = (value: any) => {
 
 const statusFilters = [
   { key: "all", label: "All" },
-  { key: "for_approval", label: "For Approval" },
   { key: "pending", label: "Pending" },
   { key: "in-progress", label: "In-Progress" },
-  { key: "approved", label: "Approved" },
   { key: "resolved", label: "Resolved" },
 ];
 
 const statusColors: Record<string, string> = {
-  for_approval: "#F5A524",
   pending: "#FBC02D",
   "in-progress": "#42A5F5",
-  approved: "#00B894",
   resolved: "#2ECC71",
   default: "#B0BEC5",
 };
@@ -81,13 +77,23 @@ export default function ReportsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [refreshing, setRefreshing] = useState(false);
   const [userVotes, setUserVotes] = useState<{ [key: string]: string }>({});
-  const [submittingVote, setSubmittingVote] = useState<{ [key: string]: boolean }>({});
-  const [commentingReportId, setCommentingReportId] = useState<string | null>(null);
+  const [submittingVote, setSubmittingVote] = useState<{
+    [key: string]: boolean;
+  }>({});
+  const [commentingReportId, setCommentingReportId] = useState<string | null>(
+    null
+  );
   const [commentText, setCommentText] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
-  const [reportComments, setReportComments] = useState<{ [key: string]: any[] }>({});
-  const [commentsLoading, setCommentsLoading] = useState<{ [key: string]: boolean }>({});
-  const [commentCounts, setCommentCounts] = useState<{ [key: string]: number }>({});
+  const [reportComments, setReportComments] = useState<{
+    [key: string]: any[];
+  }>({});
+  const [commentsLoading, setCommentsLoading] = useState<{
+    [key: string]: boolean;
+  }>({});
+  const [commentCounts, setCommentCounts] = useState<{ [key: string]: number }>(
+    {}
+  );
 
   useEffect(() => {
     loadReports();
@@ -160,7 +166,11 @@ export default function ReportsPage() {
             const comments = await getComments(report.id);
             return [report.id, comments.length] as [string, number];
           } catch (error) {
-            console.warn("Could not load comment count for report:", report.id, error);
+            console.warn(
+              "Could not load comment count for report:",
+              report.id,
+              error
+            );
             return [report.id, 0] as [string, number];
           }
         })
@@ -381,8 +391,7 @@ export default function ReportsPage() {
                 "Untitled report"}
             </Text>
             <Text style={styles.cardMeta}>
-              {item.authorName} •{" "}
-              {item.location?.address || "Unknown location"}
+              {item.authorName} • {item.location?.address || "Unknown location"}
             </Text>
           </View>
           <View style={[styles.statusBadge, { backgroundColor: badgeColor }]}>

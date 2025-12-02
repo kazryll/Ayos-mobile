@@ -341,7 +341,10 @@ export const voteReport = async (reportId, userId, voteType) => {
     }
 
     // Create notification for upvote
-    if ((voteType === "up" && prevVote !== "up") || (voteType === "down" && prevVote !== "down")) {
+    if (
+      (voteType === "up" && prevVote !== "up") ||
+      (voteType === "down" && prevVote !== "down")
+    ) {
       try {
         const reportData = reportSnap.data();
         const ownerId = reportData.reportedBy;

@@ -33,7 +33,12 @@ const Leaderboards: React.FC = () => {
       setLoading(true);
       try {
         // Map UI timePeriod to service period parameter
-        const periodParam = timePeriod === "weekly" ? "weekly" : timePeriod === "monthly" ? "monthly" : "all-time";
+        const periodParam =
+          timePeriod === "weekly"
+            ? "weekly"
+            : timePeriod === "monthly"
+            ? "monthly"
+            : "all-time";
         const data = await getLeaderboard(100, periodParam);
         if (!mounted) return;
         setEntries(data || []);
@@ -50,8 +55,9 @@ const Leaderboards: React.FC = () => {
     };
   }, [timePeriod]);
 
-  const filtered = entries
-    .filter((e) => e.displayName.toLowerCase().includes(query.toLowerCase()));
+  const filtered = entries.filter((e) =>
+    e.displayName.toLowerCase().includes(query.toLowerCase())
+  );
 
   return (
     <View style={styles.container}>

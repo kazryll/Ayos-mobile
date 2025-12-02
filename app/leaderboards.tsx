@@ -24,66 +24,22 @@ const Leaderboards: React.FC = () => {
   const [query, setQuery] = useState("");
   const [timePeriod, setTimePeriod] = useState<TimePeriod>("all-time");
 
-  // Dummy data for visualization (until LGU verification is implemented)
-  const dummyLeaderboard = [
-    {
-      userId: "user_1",
-      displayName: "Papi Kurt",
-      avatarUrl: null,
-      verifiedReports: 47,
-      points: 9.4,
-    },
-    {
-      userId: "user_2",
-      displayName: "Klark Luthor",
-      avatarUrl: null,
-      verifiedReports: 45,
-      points: 9.0,
-    },
-    {
-      userId: "user_3",
-      displayName: "Maria Santos",
-      avatarUrl: null,
-      verifiedReports: 32,
-      points: 6.4,
-    },
-    {
-      userId: "user_4",
-      displayName: "Juan Dela Cruz",
-      avatarUrl: null,
-      verifiedReports: 28,
-      points: 5.6,
-    },
-    {
-      userId: "user_5",
-      displayName: "Ana Garcia",
-      avatarUrl: null,
-      verifiedReports: 21,
-      points: 4.2,
-    },
-  ];
-
-  // Filter entries by time period
-  const filterByTimePeriod = (allEntries: any[], period: TimePeriod) => {
-    const now = new Date();
-    // For now, return dummy data regardless of period
-    // This will be replaced with real filtering once backend verification is ready
-    return dummyLeaderboard;
-  };
+  // No dummy data: fetch real leaderboard entries from backend.
+  // Time period (all-time / monthly / weekly) is passed to the service.
 
   useEffect(() => {
     let mounted = true;
     const load = async () => {
       setLoading(true);
       try {
-        // Try to fetch real leaderboard data
-        const data = await getLeaderboard(100);
+        // Map UI timePeriod to service period parameter
+        const periodParam = timePeriod === "weekly" ? "weekly" : timePeriod === "monthly" ? "monthly" : "all-time";
+        const data = await getLeaderboard(100, periodParam);
         if (!mounted) return;
-        // Use real data if available, otherwise fall back to dummy
-        setEntries(data.length > 0 ? data : dummyLeaderboard);
+        setEntries(data || []);
       } catch (error) {
-        console.warn("Using dummy leaderboard data:", error);
-        if (mounted) setEntries(dummyLeaderboard);
+        console.error("Could not load leaderboard:", error);
+        if (mounted) setEntries([]);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -92,11 +48,10 @@ const Leaderboards: React.FC = () => {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [timePeriod]);
 
-  const filtered = filterByTimePeriod(entries, timePeriod).filter((e) =>
-    e.displayName.toLowerCase().includes(query.toLowerCase())
-  );
+  const filtered = entries
+    .filter((e) => e.displayName.toLowerCase().includes(query.toLowerCase()));
 
   return (
     <View style={styles.container}>
@@ -209,7 +164,7 @@ const Leaderboards: React.FC = () => {
                       <Text style={styles.avatarInitials}>
                         {(item.displayName || "U")
                           .split(" ")
-                          .map((s) => s[0])
+                          .map((s: string) => s[0])
                           .slice(0, 2)
                           .join("")}
                       </Text>

@@ -5,6 +5,7 @@ import {
   getDocs,
   query,
   where,
+  Timestamp,
 } from "firebase/firestore";
 import { db } from "../config/firebase";
 import { getUserReports } from "./reports";
@@ -46,13 +47,28 @@ export const getUserProfile = async (userId) => {
 
 // Leaderboard: compute points based on LGU-verified reports
 // Rule: 0.2 points per report that is marked as 'resolved' (LGU verified)
-export const getLeaderboard = async (limit = 50) => {
+export const getLeaderboard = async (limit = 50, period = "all-time") => {
   try {
-    // Query reports that have status 'resolved' (assumed LGU-verified)
-    const q = query(
-      collection(db, "reports"),
-      where("status", "==", "resolved")
-    );
+    // Build query for reports that have status 'resolved' (LGU-verified)
+    const colRef = collection(db, "reports");
+
+    // Optionally filter by period
+    let q;
+    if (period === "weekly" || period === "monthly") {
+      const now = new Date();
+      const days = period === "weekly" ? 7 : 30;
+      const start = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+      const startTs = Timestamp.fromDate(start);
+
+      q = query(
+        colRef,
+        where("status", "==", "resolved"),
+        where("createdAt", ">=", startTs)
+      );
+    } else {
+      q = query(colRef, where("status", "==", "resolved"));
+    }
+
     const snapshot = await getDocs(q);
 
     // Aggregate counts by userId

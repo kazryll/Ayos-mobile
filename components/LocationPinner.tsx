@@ -1,4 +1,9 @@
-import { GoogleMap, Marker, Polygon, useJsApiLoader } from "@react-google-maps/api";
+import {
+  GoogleMap,
+  Marker,
+  Polygon,
+  useJsApiLoader,
+} from "@react-google-maps/api";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Location from "expo-location";
 import React, { useEffect, useRef, useState } from "react";
@@ -501,65 +506,65 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({
                 </View>
               )}
 
-              { /* Use singleton loader hook; render map only when scriptLoaded */ }
+              {/* Use singleton loader hook; render map only when scriptLoaded */}
               {scriptLoaded ? (
                 <GoogleMap
-                    mapContainerStyle={mapContainerStyle}
-                    center={mapCenter || defaultCenter}
-                    zoom={15}
-                    onClick={handleMapClick}
-                    onLoad={(map: any) => {
-                      mapRef.current = map;
-                    }}
-                    options={{
-                      streetViewControl: false,
-                      mapTypeControl: false,
-                      fullscreenControl: false,
-                      zoomControl: true,
-                      gestureHandling: "greedy",
-                    }}
-                  >
-                    {/* Barangay Boundaries */}
-                    {showBoundaries &&
-                      barangayBoundaries.map((barangay) => {
-                        // Extract coordinates from the GeoJSON structure
-                        const coordinates = barangay.boundingBox.coordinates;
+                  mapContainerStyle={mapContainerStyle}
+                  center={mapCenter || defaultCenter}
+                  zoom={15}
+                  onClick={handleMapClick}
+                  onLoad={(map: any) => {
+                    mapRef.current = map;
+                  }}
+                  options={{
+                    streetViewControl: false,
+                    mapTypeControl: false,
+                    fullscreenControl: false,
+                    zoomControl: true,
+                    gestureHandling: "greedy",
+                  }}
+                >
+                  {/* Barangay Boundaries */}
+                  {showBoundaries &&
+                    barangayBoundaries.map((barangay) => {
+                      // Extract coordinates from the GeoJSON structure
+                      const coordinates = barangay.boundingBox.coordinates;
 
-                        // Convert to Google Maps format [lat, lng]
-                        const paths = coordinates.map((coord: number[]) => ({
-                          lat: coord[1],
-                          lng: coord[0],
-                        }));
+                      // Convert to Google Maps format [lat, lng]
+                      const paths = coordinates.map((coord: number[]) => ({
+                        lat: coord[1],
+                        lng: coord[0],
+                      }));
 
-                        return (
-                          <Polygon
-                            key={barangay.name}
-                            paths={paths}
-                            options={{
-                              fillColor: "#4285F4",
-                              fillOpacity: 0.1,
-                              strokeColor: "#4285F4",
-                              strokeOpacity: 0.6,
-                              strokeWeight: 2,
-                              clickable: false,
-                            }}
-                          />
-                        );
-                      })}
+                      return (
+                        <Polygon
+                          key={barangay.name}
+                          paths={paths}
+                          options={{
+                            fillColor: "#4285F4",
+                            fillOpacity: 0.1,
+                            strokeColor: "#4285F4",
+                            strokeOpacity: 0.6,
+                            strokeWeight: 2,
+                            clickable: false,
+                          }}
+                        />
+                      );
+                    })}
 
-                    {/* Marker for selected location */}
-                    {selectedLocation && (
-                      <Marker
-                        position={{
-                          lat: selectedLocation.latitude,
-                          lng: selectedLocation.longitude,
-                        }}
-                      />
-                    )}
-                  </GoogleMap>
-                ) : (
-                  renderMapFallback()
-                )}
+                  {/* Marker for selected location */}
+                  {selectedLocation && (
+                    <Marker
+                      position={{
+                        lat: selectedLocation.latitude,
+                        lng: selectedLocation.longitude,
+                      }}
+                    />
+                  )}
+                </GoogleMap>
+              ) : (
+                renderMapFallback()
+              )}
 
               <View style={styles.mapButtonsContainer}>
                 <TouchableOpacity

@@ -51,10 +51,11 @@ const GOOGLE_MAPS_API_KEY = "AIzaSyBRV1JEt_qSWZPxpvouEUNzuPbW5gWW4yc";
 export default function HomeScreen() {
   const router = useRouter();
   const isWeb = Platform.OS === "web";
-  const { isLoaded: homeMapLoaded, loadError: homeMapLoadError } = useJsApiLoader({
-    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
-    id: "google-map-script",
-  });
+  const { isLoaded: homeMapLoaded, loadError: homeMapLoadError } =
+    useJsApiLoader({
+      googleMapsApiKey: GOOGLE_MAPS_API_KEY,
+      id: "google-map-script",
+    });
   const [userStats, setUserStats] = useState({
     totalReports: 0,
     pendingReports: 0,
@@ -648,15 +649,20 @@ export default function HomeScreen() {
                   ))}
                 </GoogleMap>
               ) : (
-                <View style={{
-                  width: "100%",
-                  height: 220,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  borderRadius: 12,
-                  backgroundColor: '#fff'
-                }}>
-                  <ActivityIndicator size="small" color={theme.Colors.primary} />
+                <View
+                  style={{
+                    width: "100%",
+                    height: 220,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    borderRadius: 12,
+                    backgroundColor: "#fff",
+                  }}
+                >
+                  <ActivityIndicator
+                    size="small"
+                    color={theme.Colors.primary}
+                  />
                 </View>
               )
             ) : (

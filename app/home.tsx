@@ -127,7 +127,10 @@ export default function HomeScreen() {
   // Top reports derived by total votes (up + down), top 3 — only Approved reports
   const topReports = [...feedReports]
     .filter((r) => {
-      const status = (r.status || "").toString().toLowerCase().replace(/_/g, "-");
+      const status = (r.status || "")
+        .toString()
+        .toLowerCase()
+        .replace(/_/g, "-");
       return status === "approved";
     })
     .sort(

@@ -124,8 +124,12 @@ export default function HomeScreen() {
       title: r.aiGeneratedAnalysis?.title || r.originalDescription || "Report",
     }));
 
-  // Top reports derived by total votes (up + down), top 3
+  // Top reports derived by total votes (up + down), top 3 — only Approved reports
   const topReports = [...feedReports]
+    .filter((r) => {
+      const status = (r.status || "").toString().toLowerCase().replace(/_/g, "-");
+      return status === "approved";
+    })
     .sort(
       (a, b) =>
         (b.upvotes || 0) +

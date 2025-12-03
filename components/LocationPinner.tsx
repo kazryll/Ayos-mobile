@@ -1,4 +1,4 @@
-import { GoogleMap, LoadScript, Marker, Polygon } from "@react-google-maps/api";
+import { GoogleMap, Marker, Polygon, useJsApiLoader } from "@react-google-maps/api";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Location from "expo-location";
 import React, { useEffect, useRef, useState } from "react";
@@ -65,8 +65,11 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [mapLoading, setMapLoading] = useState(true);
-  const [scriptLoaded, setScriptLoaded] = useState(false);
-  const [scriptError, setScriptError] = useState(false);
+  const { isLoaded: scriptLoaded, loadError } = useJsApiLoader({
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
+    id: "google-map-script",
+  });
+  const scriptError = !!loadError;
   const [error, setError] = useState<string | null>(null);
   const [isGeocodingAddress, setIsGeocodingAddress] = useState(false);
   const [mapCenter, setMapCenter] = useState<{
@@ -218,21 +221,16 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({
     return formattedAddress;
   };
 
-  const handleMapLoad = () => {
-    console.log("🗺️ Google Maps script loaded successfully!");
-    if (!scriptLoaded) {
-      setScriptLoaded(true);
+  useEffect(() => {
+    if (scriptLoaded) {
+      console.log("🗺️ Google Maps script loaded successfully!");
       setMapLoading(false);
-      setScriptError(false);
     }
-  };
-
-  const handleScriptError = () => {
-    console.error("❌ Failed to load Google Maps script");
-    setScriptError(true);
-    setMapLoading(false);
-    setScriptLoaded(false);
-  };
+    if (loadError) {
+      console.error("❌ Failed to load Google Maps script", loadError);
+      setMapLoading(false);
+    }
+  }, [scriptLoaded, loadError]);
 
   const handleMapClick = (event: google.maps.MapMouseEvent) => {
     if (!event.latLng) return;
@@ -503,14 +501,9 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({
                 </View>
               )}
 
-              <LoadScript
-                googleMapsApiKey={GOOGLE_MAPS_API_KEY}
-                onLoad={handleMapLoad}
-                onError={handleScriptError}
-                loadingElement={<View style={styles.mapLoader} />}
-              >
-                {scriptLoaded ? (
-                  <GoogleMap
+              { /* Use singleton loader hook; render map only when scriptLoaded */ }
+              {scriptLoaded ? (
+                <GoogleMap
                     mapContainerStyle={mapContainerStyle}
                     center={mapCenter || defaultCenter}
                     zoom={15}
@@ -567,7 +560,6 @@ const LocationPinner: React.FC<LocationPinnerProps> = ({
                 ) : (
                   renderMapFallback()
                 )}
-              </LoadScript>
 
               <View style={styles.mapButtonsContainer}>
                 <TouchableOpacity

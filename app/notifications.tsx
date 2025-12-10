@@ -6,7 +6,7 @@ import {
 } from "@/services/notifications";
 import { getUserProfile } from "@/services/userService";
 import { LinearGradient } from "expo-linear-gradient";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { collection, doc, getDoc, getDocs, limit, query, where } from "firebase/firestore";
 import React, { useCallback, useEffect, useState } from "react";
 import {
@@ -84,7 +84,7 @@ export default function NotificationsScreen() {
     const enriched = await Promise.all(
         list.map(async (notif) => {
           let actorId = notif.payload?.actorId;
-          
+
           // For old notifications without actorId, try to get it from the comment
           if (!actorId && notif.type === "comment" && notif.payload?.commentId && notif.payload?.reportId) {
             try {
@@ -98,7 +98,7 @@ export default function NotificationsScreen() {
               console.warn("Could not fetch comment for notification:", notif.id, err);
             }
           }
-          
+
           // For old vote notifications without actorId, try to get it from reportVotes
           if (!actorId && (notif.type === "upvote" || notif.type === "downvote") && notif.payload?.reportId) {
             try {
@@ -121,7 +121,7 @@ export default function NotificationsScreen() {
               console.warn("Could not fetch vote for notification:", notif.id, err);
             }
           }
-          
+
           if (!actorId) {
             // For verified notifications, there's no actor
             if (notif.type === "verified") {
@@ -130,14 +130,14 @@ export default function NotificationsScreen() {
             console.warn("Notification missing actorId:", notif.id, "type:", notif.type);
             return { ...notif, actorName: "A user" };
           }
-          
+
           try {
             const profile = await getUserProfile(actorId);
             if (profile) {
               // displayName is required during signup, so it should always exist
               // Check displayName first (primary field), then name, then email
               let fullName = profile.displayName || profile.name || profile.email;
-              
+
               if (fullName && typeof fullName === "string" && fullName.trim()) {
                 const firstName = getFirstName(fullName.trim());
                 if (firstName) {
@@ -165,7 +165,7 @@ export default function NotificationsScreen() {
             } else {
               console.warn(`No profile found for actorId: ${actorId}, type: ${notif.type}`);
             }
-            
+
             // If profile doesn't exist or has no name, try to extract from actorId if it's an email
             // (actorId is usually a Firebase UID, but check just in case)
             if (actorId.includes("@")) {
@@ -175,7 +175,7 @@ export default function NotificationsScreen() {
                 return { ...notif, actorName: firstName };
               }
             }
-            
+
             // This should rarely happen since displayName is required during signup
             // But if it does, we'll use a generic name
             console.error(`Could not extract name for actorId: ${actorId}`, {
@@ -218,7 +218,7 @@ export default function NotificationsScreen() {
           // Enrich notifications with actor names
           const enriched = await enrichNotifications(notificationsList);
           setNotifications(enriched);
-          
+
           // Mark all as read
           if (enriched.length > 0) {
             await markAllNotificationsRead(user.uid);

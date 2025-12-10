@@ -1,15 +1,15 @@
 import {
-  addDoc,
-  collection,
-  doc,
-  getDocs,
-  limit as firestoreLimit,
-  onSnapshot,
-  orderBy,
-  query,
-  serverTimestamp,
-  updateDoc,
-  where,
+    addDoc,
+    collection,
+    doc,
+    limit as firestoreLimit,
+    getDocs,
+    onSnapshot,
+    orderBy,
+    query,
+    serverTimestamp,
+    updateDoc,
+    where,
 } from "firebase/firestore";
 import { db } from "../config/firebase";
 
@@ -83,7 +83,7 @@ export const subscribeToNotifications = (userId, callback, limit = 50) => {
             createdAt: data.createdAt?.toDate?.() || new Date(),
           });
         });
-        
+
         // Call the callback with the updated notifications
         callback(notifs);
       },

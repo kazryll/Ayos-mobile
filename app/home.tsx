@@ -1,31 +1,31 @@
 // screens/HomeScreen.tsx
 import { subscribeToNotifications } from "@/services/notifications";
 import {
-  getAllReports,
-  getComments,
-  getUserVoteForReport,
-  voteReport,
+    getAllReports,
+    getComments,
+    getUserVoteForReport,
+    voteReport,
 } from "@/services/reports";
 import {
-  getLeaderboard,
-  getUserProfile,
-  getUserStats,
+    getLeaderboard,
+    getUserProfile,
+    getUserStats,
 } from "@/services/userService";
 import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  Linking,
-  Platform,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Image,
+    Linking,
+    Platform,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { WebView } from "react-native-webview";
 import BottomNav from "../components/BottomNav";

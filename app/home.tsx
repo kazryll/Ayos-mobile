@@ -554,14 +554,20 @@ export default function HomeScreen() {
               onPress={() => router.push("/notifications" as any)}
               style={styles.notificationButton}
             >
-              <Ionicons
-                name="notifications-outline"
-                size={24}
-                color={theme.Colors.primary}
-              />
-              <Text style={styles.notificationCount}>
-                {notifications.filter((n) => !n.read).length}
-              </Text>
+              <View style={styles.notificationIconWrapper}>
+                <Ionicons
+                  name={notifications.filter((n) => !n.read).length > 0 ? "notifications" : "notifications-outline"}
+                  size={24}
+                  color={theme.Colors.primary}
+                />
+                {notifications.filter((n) => !n.read).length > 0 && (
+                  <View style={styles.notificationBadge}>
+                    <Text style={styles.notificationBadgeText}>
+                      {notifications.filter((n) => !n.read).length}
+                    </Text>
+                  </View>
+                )}
+              </View>
             </TouchableOpacity>
           </View>
         </View>
@@ -927,6 +933,26 @@ const styles = StyleSheet.create({
   notificationButton: {
     flexDirection: "row",
     alignItems: "center",
+  },
+  notificationIconWrapper: {
+    position: "relative",
+  },
+  notificationBadge: {
+    position: "absolute",
+    top: -4,
+    right: -6,
+    backgroundColor: "#E74C3C",
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 4,
+  },
+  notificationBadgeText: {
+    color: "white",
+    fontSize: 10,
+    fontWeight: "700",
   },
   notificationIcon: {
     width: 24,

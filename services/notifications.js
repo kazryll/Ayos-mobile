@@ -3,6 +3,8 @@ import {
   collection,
   doc,
   getDocs,
+  limit as firestoreLimit,
+  onSnapshot,
   orderBy,
   query,
   serverTimestamp,
@@ -49,6 +51,55 @@ export const getNotificationsForUser = async (userId, limit = 50) => {
   } catch (error) {
     console.error("Error fetching notifications:", error);
     return [];
+  }
+};
+
+/**
+ * Subscribe to real-time notifications for a user
+ * @param {string} userId - The user ID to listen for notifications
+ * @param {function} callback - Callback function that receives the notifications array
+ * @param {number} limit - Maximum number of notifications to fetch (default: 50)
+ * @returns {function} Unsubscribe function to stop listening
+ */
+export const subscribeToNotifications = (userId, callback, limit = 50) => {
+  try {
+    const q = query(
+      collection(db, "notifications"),
+      where("userId", "==", userId),
+      orderBy("createdAt", "desc"),
+      firestoreLimit(limit)
+    );
+
+    // Set up real-time listener
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const notifs = [];
+        snapshot.forEach((d) => {
+          const data = d.data();
+          notifs.push({
+            id: d.id,
+            ...data,
+            createdAt: data.createdAt?.toDate?.() || new Date(),
+          });
+        });
+        
+        // Call the callback with the updated notifications
+        callback(notifs);
+      },
+      (error) => {
+        console.error("Error in notifications listener:", error);
+        // Call callback with empty array on error
+        callback([]);
+      }
+    );
+
+    // Return the unsubscribe function
+    return unsubscribe;
+  } catch (error) {
+    console.error("Error setting up notifications listener:", error);
+    // Return a no-op function if setup fails
+    return () => {};
   }
 };
 

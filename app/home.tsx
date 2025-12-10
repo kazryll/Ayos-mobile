@@ -1,5 +1,5 @@
 // screens/HomeScreen.tsx
-import { getNotificationsForUser } from "@/services/notifications";
+import { subscribeToNotifications } from "@/services/notifications";
 import {
   getAllReports,
   getComments,
@@ -85,6 +85,28 @@ export default function HomeScreen() {
 
   useEffect(() => {
     loadHomeData();
+  }, []);
+
+  // Set up real-time notification listener
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    // Subscribe to real-time notifications
+    const unsubscribe = subscribeToNotifications(
+      user.uid,
+      (notificationsList) => {
+        // Update notifications state with real-time data
+        setNotifications(notificationsList || []);
+      },
+      50 // Limit to 50 most recent notifications
+    );
+
+    // Cleanup: unsubscribe when component unmounts
+    return () => {
+      console.log("🔌 Unsubscribing from home notifications listener");
+      unsubscribe();
+    };
   }, []);
 
   useFocusEffect(
@@ -312,16 +334,6 @@ export default function HomeScreen() {
         setFeedReports([]);
       }
 
-      // Load notifications for user
-      try {
-        const user = auth.currentUser;
-        if (user) {
-          const notifs = await getNotificationsForUser(user.uid);
-          setNotifications(notifs || []);
-        }
-      } catch (error) {
-        console.warn("Could not load notifications:", error);
-      }
       // Load leaderboard entries (LGU-verified reports -> ranking)
       try {
         const lb = await getLeaderboard(20);

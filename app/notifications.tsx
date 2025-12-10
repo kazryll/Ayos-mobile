@@ -1,14 +1,14 @@
 import theme from "@/config/theme";
 import {
-    getNotificationsForUser,
     markAllNotificationsRead,
     markNotificationRead,
+    subscribeToNotifications,
 } from "@/services/notifications";
 import { getUserProfile } from "@/services/userService";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
 import { collection, doc, getDoc, getDocs, limit, query, where } from "firebase/firestore";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
     ActivityIndicator,
     Dimensions,
@@ -80,15 +80,8 @@ export default function NotificationsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const loadNotifications = useCallback(async () => {
-    try {
-      const user = auth.currentUser;
-      if (!user) {
-        router.replace("/signin");
-        return;
-      }
-      const list = await getNotificationsForUser(user.uid, 100);
-      const enriched = await Promise.all(
+  const enrichNotifications = useCallback(async (list: any[]) => {
+    const enriched = await Promise.all(
         list.map(async (notif) => {
           let actorId = notif.payload?.actorId;
           
@@ -204,26 +197,56 @@ export default function NotificationsScreen() {
           }
         })
       );
-      setNotifications(enriched);
-      await markAllNotificationsRead(user.uid);
-    } catch (error) {
-      console.error("Error loading notifications:", error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [router]);
+    return enriched;
+  }, []);
 
-  useFocusEffect(
-    useCallback(() => {
-      setLoading(true);
-      loadNotifications();
-    }, [loadNotifications])
-  );
+  // Set up real-time listener
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (!user) {
+      router.replace("/signin");
+      return;
+    }
+
+    setLoading(true);
+
+    // Subscribe to real-time notifications
+    const unsubscribe = subscribeToNotifications(
+      user.uid,
+      async (notificationsList) => {
+        try {
+          // Enrich notifications with actor names
+          const enriched = await enrichNotifications(notificationsList);
+          setNotifications(enriched);
+          
+          // Mark all as read
+          if (enriched.length > 0) {
+            await markAllNotificationsRead(user.uid);
+          }
+        } catch (error) {
+          console.error("Error enriching notifications:", error);
+        } finally {
+          setLoading(false);
+          setRefreshing(false);
+        }
+      },
+      100 // Limit to 100 most recent notifications
+    );
+
+    // Cleanup: unsubscribe when component unmounts
+    return () => {
+      console.log("🔌 Unsubscribing from notifications listener");
+      unsubscribe();
+    };
+  }, [router, enrichNotifications]);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadNotifications();
+    // The real-time listener will automatically update the data
+    // Just reset the refreshing state after a brief delay
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 500);
   };
 
   const handleMarkRead = async (notificationId: string) => {

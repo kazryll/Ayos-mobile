@@ -262,7 +262,10 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
 
       case WizardStep.SUBMISSION_SUCCESS:
         return (
-          <ScrollView style={[styles.stepContainer, styles.successFull]}>
+          <ScrollView 
+            style={styles.stepContainer} 
+            contentContainerStyle={styles.successFull}
+          >
             <View style={styles.successContainer}>
               <Animated.View
                 style={{
@@ -460,8 +463,8 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   successFull: {
-    flex: 1,
     justifyContent: "center",
+    minHeight: '100%',
     padding: 20,
   },
   stepTitle: {

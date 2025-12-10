@@ -90,7 +90,7 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({
   })();
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.scrollView} contentContainerStyle={styles.container}>
       <LinearGradient
         colors={[theme.Colors.primaryDark, theme.Colors.primaryLight]}
         start={{ x: 0, y: 0 }}
@@ -242,10 +242,12 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
+  scrollView: {
     flex: 1,
-    padding: 20,
     backgroundColor: "#fff",
+  },
+  container: {
+    padding: 20,
   },
   headerGradient: {
     padding: 18,

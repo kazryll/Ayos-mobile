@@ -107,7 +107,7 @@ export const submitReport = async (reportData, userId = null) => {
       );
 
       if (detectedBarangay) {
-        assignedTo = `${detectedBarangay} Barangay LGU`;
+        assignedTo = `${detectedBarangay}`;
         console.log(`✅ Report assigned to: ${assignedTo}`);
       } else {
         console.log("⚠️ Could not determine barangay for assignment");

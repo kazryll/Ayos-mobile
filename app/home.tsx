@@ -1,5 +1,8 @@
 // screens/HomeScreen.tsx
-import { subscribeToNotifications } from "@/services/notifications";
+import {
+  subscribeToNotifications,
+  subscribeToActivityNotifications,
+} from "@/services/notifications";
 import {
     getAllReports,
     getComments,
@@ -91,7 +94,7 @@ export default function HomeScreen() {
     if (!user) return;
 
     // Subscribe to real-time notifications
-    const unsubscribe = subscribeToNotifications(
+    const unsubscribeNotifications = subscribeToNotifications(
       user.uid,
       (notificationsList) => {
         // Update notifications state with real-time data
@@ -100,10 +103,14 @@ export default function HomeScreen() {
       50 // Limit to 50 most recent notifications
     );
 
+    // Subscribe to activity logs to automatically create notifications
+    const unsubscribeActivity = subscribeToActivityNotifications(user.uid);
+
     // Cleanup: unsubscribe when component unmounts
     return () => {
       console.log("🔌 Unsubscribing from home notifications listener");
-      unsubscribe();
+      unsubscribeNotifications();
+      unsubscribeActivity();
     };
   }, []);
 

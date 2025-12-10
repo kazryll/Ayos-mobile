@@ -3,6 +3,7 @@ import {
     markAllNotificationsRead,
     markNotificationRead,
     subscribeToNotifications,
+    subscribeToActivityNotifications,
 } from "@/services/notifications";
 import { getUserProfile } from "@/services/userService";
 import { Ionicons } from "@expo/vector-icons";
@@ -212,7 +213,7 @@ export default function NotificationsScreen() {
     setLoading(true);
 
     // Subscribe to real-time notifications
-    const unsubscribe = subscribeToNotifications(
+    const unsubscribeNotifications = subscribeToNotifications(
       user.uid,
       async (notificationsList) => {
         try {
@@ -229,10 +230,14 @@ export default function NotificationsScreen() {
       100 // Limit to 100 most recent notifications
     );
 
+    // Subscribe to activity logs to automatically create notifications
+    const unsubscribeActivity = subscribeToActivityNotifications(user.uid);
+
     // Cleanup: unsubscribe when component unmounts
     return () => {
       console.log("🔌 Unsubscribing from notifications listener");
-      unsubscribe();
+      unsubscribeNotifications();
+      unsubscribeActivity();
     };
   }, [router, enrichNotifications]);
 

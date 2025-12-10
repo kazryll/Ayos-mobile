@@ -17,6 +17,11 @@ import { auth } from "../config/firebase";
 import theme from "../config/theme";
 import { getUserReports } from "../services/reports";
 import { getUserStats } from "../services/userService";
+import {
+  formatActivityLog,
+  formatTimeAgo,
+  subscribeToActivityLogs,
+} from "../services/activityLogs";
 
 export default function ActivityScreen() {
   const router = useRouter();
@@ -31,6 +36,12 @@ export default function ActivityScreen() {
   const [reports, setReports] = useState<any[]>([]);
   const [filteredReports, setFilteredReports] = useState<any[]>([]);
   const [activeFilter, setActiveFilter] = useState<string>("all");
+  const [expandedReportId, setExpandedReportId] = useState<string | null>(null);
+  const [reportActivityLogs, setReportActivityLogs] = useState<{
+    [key: string]: any[];
+  }>({});
+  const [logsLoading, setLogsLoading] = useState<{ [key: string]: boolean }>({
+  });
 
   useEffect(() => {
     loadActivityData();
@@ -163,6 +174,28 @@ export default function ActivityScreen() {
     return colors[normalized] || "#B0BEC5";
   };
 
+  const toggleReportExpansion = (reportId: string) => {
+    if (expandedReportId === reportId) {
+      setExpandedReportId(null);
+      return;
+    }
+
+    setExpandedReportId(reportId);
+
+    // If logs not already loaded, subscribe to them
+    if (!reportActivityLogs[reportId]) {
+      setLogsLoading((prev) => ({ ...prev, [reportId]: true }));
+
+      const unsubscribe = subscribeToActivityLogs(reportId, (logs) => {
+        setReportActivityLogs((prev) => ({ ...prev, [reportId]: logs }));
+        setLogsLoading((prev) => ({ ...prev, [reportId]: false }));
+      });
+
+      // Store unsubscribe function to clean up later
+      return () => unsubscribe();
+    }
+  };
+
   const renderReportItem = ({ item }: { item: any }) => {
     const category = getReportCategory(item);
     const statusKey = (item.status || "for_approval").toLowerCase().replace(/_/g, "-");
@@ -176,75 +209,178 @@ export default function ActivityScreen() {
       .join(" ")
       .trim();
 
+    const isExpanded = expandedReportId === item.id;
+    const activityLogs = reportActivityLogs[item.id] || [];
+    const isLoadingLogs = logsLoading[item.id];
+
     return (
-      <TouchableOpacity style={styles.reportCard} onPress={() => {}}>
-        {/* Status Indicator Bar - Left edge color indicator */}
-        <View style={[styles.statusIndicator, { backgroundColor: statusColor }]} />
+      <View style={styles.reportCard}>
+        <TouchableOpacity
+          style={styles.reportCardTouchable}
+          onPress={() => toggleReportExpansion(item.id)}
+          activeOpacity={0.7}
+        >
+          {/* Status Indicator Bar - Left edge color indicator */}
+          <View style={[styles.statusIndicator, { backgroundColor: statusColor }]} />
 
-        <View style={styles.cardContent}>
-          {/* Date Badge - Top right corner */}
-          <View style={styles.dateBadge}>
-            <Ionicons name="calendar-outline" size={10} color="#6C757D" />
-            <Text style={styles.dateText}>
-              {(() => {
-                const date =
-                  item.createdAt?.toDate?.() || new Date(item.createdAt);
-                const now = new Date();
-                const diffMs = now.getTime() - date.getTime();
-                const diffDays = Math.floor(diffMs / 86400000);
+          <View style={styles.cardContent}>
+            {/* Date Badge - Top right corner */}
+            <View style={styles.dateBadge}>
+              <Ionicons name="calendar-outline" size={10} color="#6C757D" />
+              <Text style={styles.dateText}>
+                {(() => {
+                  const date =
+                    item.createdAt?.toDate?.() || new Date(item.createdAt);
+                  const now = new Date();
+                  const diffMs = now.getTime() - date.getTime();
+                  const diffDays = Math.floor(diffMs / 86400000);
 
-                if (diffDays === 0) return "Today";
-                if (diffDays === 1) return "Yesterday";
-                if (diffDays < 7) return `${diffDays}d ago`;
-                return date.toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                });
-              })()}
-            </Text>
-          </View>
-
-          {/* Title */}
-          <Text style={styles.cardTitle}>
-            {item.aiGeneratedAnalysis?.title ||
-              item.originalDescription?.slice(0, 60) ||
-              "Untitled report"}
-          </Text>
-
-          {/* Badges Row - Category + Status side by side */}
-          <View style={styles.badgesRow}>
-            <View
-              style={[
-                styles.categoryBadge,
-                { backgroundColor: getCategoryColor(category) },
-              ]}
-            >
-              <Ionicons
-                name={getCategoryIcon(category) as any}
-                size={10}
-                color="white"
-                style={{ marginRight: 3 }}
-              />
-              <Text style={styles.categoryBadgeText}>
-                {getCategoryDisplayName(category)}
+                  if (diffDays === 0) return "Today";
+                  if (diffDays === 1) return "Yesterday";
+                  if (diffDays < 7) return `${diffDays}d ago`;
+                  return date.toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                  });
+                })()}
               </Text>
             </View>
-            <View
-              style={[styles.statusBadge, { backgroundColor: statusColor }]}
-            >
-              <Text style={styles.statusBadgeText}>{statusLabel}</Text>
+
+            {/* Title */}
+            <Text style={styles.cardTitle}>
+              {item.aiGeneratedAnalysis?.title ||
+                item.originalDescription?.slice(0, 60) ||
+                "Untitled report"}
+            </Text>
+
+            {/* Badges Row - Category + Status side by side */}
+            <View style={styles.badgesRow}>
+              <View
+                style={[
+                  styles.categoryBadge,
+                  { backgroundColor: getCategoryColor(category) },
+                ]}
+              >
+                <Ionicons
+                  name={getCategoryIcon(category) as any}
+                  size={10}
+                  color="white"
+                  style={{ marginRight: 3 }}
+                />
+                <Text style={styles.categoryBadgeText}>
+                  {getCategoryDisplayName(category)}
+                </Text>
+              </View>
+              <View
+                style={[styles.statusBadge, { backgroundColor: statusColor }]}
+              >
+                <Text style={styles.statusBadgeText}>{statusLabel}</Text>
+              </View>
+            </View>
+
+            {/* Location Row */}
+            <View style={styles.locationRow}>
+              <Ionicons name="location-outline" size={12} color="#6C757D" />
+              <Text style={styles.locationText}>
+                {item.location?.barangay || item.location?.city || "Baguio City"}
+              </Text>
+            </View>
+
+            {/* Expand Indicator */}
+            <View style={styles.expandIndicator}>
+              <Ionicons
+                name={isExpanded ? "chevron-up" : "chevron-down"}
+                size={16}
+                color="#6C757D"
+              />
+              <Text style={styles.expandText}>
+                {isExpanded ? "Hide" : "View"} Activity Timeline
+              </Text>
             </View>
           </View>
+        </TouchableOpacity>
 
-          {/* Location Row */}
-          <View style={styles.locationRow}>
-            <Ionicons name="location-outline" size={12} color="#6C757D" />
-            <Text style={styles.locationText}>
-              {item.location?.barangay || item.location?.city || "Baguio City"}
-            </Text>
+        {/* Activity Timeline - Expanded Section */}
+        {isExpanded && (
+          <View style={styles.timelineContainer}>
+            <View style={styles.timelineHeader}>
+              <Ionicons name="time-outline" size={16} color={theme.Colors.primary} />
+              <Text style={styles.timelineHeaderText}>Activity Timeline</Text>
+            </View>
+
+            {isLoadingLogs ? (
+              <View style={styles.timelineLoading}>
+                <ActivityIndicator size="small" color={theme.Colors.primary} />
+                <Text style={styles.timelineLoadingText}>Loading updates...</Text>
+              </View>
+            ) : activityLogs.length === 0 ? (
+              <View style={styles.timelineEmpty}>
+                <Ionicons name="information-circle-outline" size={24} color="#94A3B8" />
+                <Text style={styles.timelineEmptyText}>No activity updates yet</Text>
+              </View>
+            ) : (
+              <View style={styles.timelineList}>
+                {activityLogs.map((log, index) => {
+                  const formatted = formatActivityLog(log);
+                  return (
+                    <View
+                      key={log.id}
+                      style={[
+                        styles.timelineItem,
+                        index === activityLogs.length - 1 && styles.timelineItemLast,
+                      ]}
+                    >
+                      {/* Timeline dot and line */}
+                      <View style={styles.timelineDot}>
+                        <View
+                          style={[
+                            styles.timelineDotInner,
+                            { backgroundColor: formatted.iconColor },
+                          ]}
+                        >
+                          <Ionicons
+                            name={formatted.icon as any}
+                            size={12}
+                            color="white"
+                          />
+                        </View>
+                        {index !== activityLogs.length - 1 && (
+                          <View style={styles.timelineLine} />
+                        )}
+                      </View>
+
+                      {/* Timeline content */}
+                      <View style={styles.timelineContent}>
+                        <View style={styles.timelineContentHeader}>
+                          <Text style={styles.timelineTitle}>{formatted.title}</Text>
+                          <Text style={styles.timelineTime}>
+                            {formatTimeAgo(log.timestamp)}
+                          </Text>
+                        </View>
+                        <Text style={styles.timelineDescription}>
+                          {formatted.description}
+                        </Text>
+                        {formatted.actorName && (
+                          <View style={styles.timelineActor}>
+                            <Ionicons
+                              name="person-circle-outline"
+                              size={14}
+                              color="#6C757D"
+                            />
+                            <Text style={styles.timelineActorText}>
+                              {formatted.actorName + ' Barangay'}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
           </View>
-        </View>
-      </TouchableOpacity>
+        )}
+      </View>
     );
   };
 
@@ -440,6 +576,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
+  },
+  reportCardTouchable: {
     flexDirection: "row",
   },
   statusIndicator: {
@@ -509,6 +647,127 @@ const styles = StyleSheet.create({
   },
   locationText: {
     fontSize: 12,
+    color: "#6C757D",
+  },
+  expandIndicator: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#E2E8F0",
+    gap: 4,
+  },
+  expandText: {
+    fontSize: 12,
+    color: "#6C757D",
+    fontWeight: "600",
+  },
+  timelineContainer: {
+    backgroundColor: "#F8FAFC",
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#E2E8F0",
+  },
+  timelineHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 16,
+  },
+  timelineHeaderText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#0F172A",
+  },
+  timelineLoading: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 20,
+  },
+  timelineLoadingText: {
+    fontSize: 13,
+    color: "#64748B",
+  },
+  timelineEmpty: {
+    alignItems: "center",
+    paddingVertical: 20,
+    gap: 8,
+  },
+  timelineEmptyText: {
+    fontSize: 13,
+    color: "#94A3B8",
+  },
+  timelineList: {
+    gap: 0,
+  },
+  timelineItem: {
+    flexDirection: "row",
+    paddingBottom: 16,
+  },
+  timelineItemLast: {
+    paddingBottom: 0,
+  },
+  timelineDot: {
+    alignItems: "center",
+    width: 32,
+    paddingTop: 2,
+  },
+  timelineDotInner: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  timelineLine: {
+    width: 2,
+    flex: 1,
+    backgroundColor: "#E2E8F0",
+    marginTop: 4,
+  },
+  timelineContent: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  timelineContentHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 4,
+  },
+  timelineTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#0F172A",
+    flex: 1,
+  },
+  timelineTime: {
+    fontSize: 11,
+    color: "#94A3B8",
+    marginLeft: 8,
+  },
+  timelineDescription: {
+    fontSize: 13,
+    color: "#475569",
+    lineHeight: 18,
+    marginBottom: 6,
+  },
+  timelineActor: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 4,
+  },
+  timelineActorText: {
+    fontSize: 11,
     color: "#6C757D",
   },
   noReportsContainer: {

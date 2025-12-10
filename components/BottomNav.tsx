@@ -3,12 +3,12 @@ import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useState } from "react";
 import {
-  Modal,
-  Platform,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Modal,
+    Platform,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import theme from "../config/theme";
 import { signOut } from "../services/auth";
@@ -119,7 +119,7 @@ const BottomNav = () => {
           ? theme.Colors.background
           : (isActive(item.key) && theme.Colors.primary) || theme.Colors.muted;
         const iconSize = item.isCTA ? 26 : 22;
-        
+
         return (
           <TouchableOpacity
             key={item.key}

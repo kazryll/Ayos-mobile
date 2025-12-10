@@ -1,10 +1,10 @@
 import theme from "@/config/theme";
 import {
-  addComment,
-  getAllReports,
-  getComments,
-  getUserVoteForReport,
-  voteReport,
+    addComment,
+    getAllReports,
+    getComments,
+    getUserVoteForReport,
+    voteReport,
 } from "@/services/reports";
 import { getUserProfile } from "@/services/userService";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
@@ -12,17 +12,16 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Dimensions,
-  FlatList,
-  Image,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Dimensions,
+    FlatList,
+    RefreshControl,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from "react-native";
 import BottomNav from "../components/BottomNav";
 import { auth } from "../config/firebase";

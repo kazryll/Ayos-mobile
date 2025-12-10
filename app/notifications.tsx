@@ -258,7 +258,7 @@ export default function NotificationsScreen() {
     try {
       const user = auth.currentUser;
       if (!user) return;
-      
+
       await markAllNotificationsRead(user.uid);
       setNotifications((prev) =>
         prev.map((notif) => ({ ...notif, read: true }))

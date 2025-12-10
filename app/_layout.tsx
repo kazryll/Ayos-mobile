@@ -1,3 +1,5 @@
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { useFonts } from "expo-font";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { onAuthStateChanged, User } from "firebase/auth";
@@ -13,6 +15,12 @@ export default function Layout() {
   const segments = useSegments();
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+
+  // Load fonts for vector icons
+  const [fontsLoaded] = useFonts({
+    ...Ionicons.font,
+    ...MaterialIcons.font,
+  });
 
   // Auth State Listener
   useEffect(() => {
@@ -31,17 +39,17 @@ export default function Layout() {
     return unsubscribe;
   }, []);
 
-  // Hide splash screen when auth is loaded
+  // Hide splash screen when auth and fonts are loaded
   useEffect(() => {
-    if (!authLoading) {
-      SplashScreen.hideAsync(); // ← HIDE SPLASH WHEN AUTH LOADED
+    if (!authLoading && fontsLoaded) {
+      SplashScreen.hideAsync(); // ← HIDE SPLASH WHEN AUTH AND FONTS LOADED
     }
-  }, [authLoading]);
+  }, [authLoading, fontsLoaded]);
 
   // Navigation logic
   useEffect(() => {
-    if (authLoading) {
-      console.log("⏳ Still loading auth...");
+    if (authLoading || !fontsLoaded) {
+      console.log("⏳ Still loading auth or fonts...");
       return;
     }
 

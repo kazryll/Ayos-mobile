@@ -12,7 +12,7 @@ import {
     getUserStats,
 } from "@/services/userService";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
+import { GoogleMap, OverlayView, useJsApiLoader } from "@react-google-maps/api";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -125,6 +125,25 @@ export default function HomeScreen() {
       }
     : mapDefaultCenter;
 
+  const getStatusColor = (status: string) => {
+    const normalizedStatus = (status || "for_approval")
+      .toString()
+      .toLowerCase()
+      .replace(/_/g, "-");
+    switch (normalizedStatus) {
+      case "resolved":
+        return "#51CF66"; // Green
+      case "in-progress":
+        return "#3498db"; // Blue
+      case "approved":
+        return "#00B894"; // Teal
+      case "rejected":
+        return "#E74C3C"; // Red
+      default:
+        return "#FFD93D"; // Yellow for pending/for_approval
+    }
+  };
+
   const mapMarkers = feedReports
     .filter((r) => r.location && (r.location.latitude || r.location.lat))
     .map((r) => ({
@@ -134,6 +153,8 @@ export default function HomeScreen() {
         lng: r.location.longitude || r.location.lng,
       },
       title: r.aiGeneratedAnalysis?.title || r.originalDescription || "Report",
+      status: r.status || "for_approval",
+      color: getStatusColor(r.status),
     }));
 
   // Top reports derived by total votes (up + down), top 3 — only Approved reports
@@ -166,6 +187,23 @@ export default function HomeScreen() {
               margin: 0;
               padding: 0;
             }
+            @keyframes pulse {
+              0% {
+                transform: scale(1);
+                opacity: 1;
+              }
+              50% {
+                transform: scale(1.2);
+                opacity: 0.7;
+              }
+              100% {
+                transform: scale(1);
+                opacity: 1;
+              }
+            }
+            .pulse-marker {
+              animation: pulse 2s ease-in-out infinite;
+            }
           </style>
           <script src="https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}"></script>
         </head>
@@ -179,12 +217,63 @@ export default function HomeScreen() {
               disableDefaultUI: true
             });
             const markers = ${markers};
+            
             markers.forEach(marker => {
-              new google.maps.Marker({
-                map,
-                position: marker.position,
-                title: marker.title
-              });
+              // Create custom circle marker with pulsing animation
+              const circleMarker = document.createElement('div');
+              circleMarker.className = 'pulse-marker';
+              circleMarker.style.width = '16px';
+              circleMarker.style.height = '16px';
+              circleMarker.style.borderRadius = '50%';
+              circleMarker.style.backgroundColor = marker.color;
+              circleMarker.style.border = '3px solid white';
+              circleMarker.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
+              circleMarker.style.cursor = 'pointer';
+              
+              // Create overlay
+              class CircleOverlay extends google.maps.OverlayView {
+                constructor(position, element) {
+                  super();
+                  this.position = position;
+                  this.element = element;
+                }
+                
+                onAdd() {
+                  const panes = this.getPanes();
+                  panes.overlayMouseTarget.appendChild(this.element);
+                  
+                  // Add click listener
+                  this.element.addEventListener('click', () => {
+                    const infoWindow = new google.maps.InfoWindow({
+                      content: '<div style="padding: 8px; font-family: sans-serif;"><strong>' + marker.title + '</strong></div>',
+                      position: this.position
+                    });
+                    infoWindow.open(map);
+                  });
+                }
+                
+                draw() {
+                  const projection = this.getProjection();
+                  const point = projection.fromLatLngToDivPixel(this.position);
+                  if (point) {
+                    this.element.style.position = 'absolute';
+                    this.element.style.left = (point.x - 8) + 'px';
+                    this.element.style.top = (point.y - 8) + 'px';
+                  }
+                }
+                
+                onRemove() {
+                  if (this.element.parentNode) {
+                    this.element.parentNode.removeChild(this.element);
+                  }
+                }
+              }
+              
+              const overlay = new CircleOverlay(
+                new google.maps.LatLng(marker.position.lat, marker.position.lng),
+                circleMarker
+              );
+              overlay.setMap(map);
             });
           </script>
         </body>
@@ -662,8 +751,43 @@ export default function HomeScreen() {
                   options={{ disableDefaultUI: true }}
                 >
                   {mapMarkers.map((m) => (
-                    <Marker key={m.id} position={m.position} title={m.title} />
+                    <OverlayView
+                      key={m.id}
+                      position={m.position}
+                      mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+                    >
+                      <div
+                        style={{
+                          width: "16px",
+                          height: "16px",
+                          borderRadius: "50%",
+                          backgroundColor: m.color,
+                          border: "3px solid white",
+                          boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
+                          cursor: "pointer",
+                          animation: "pulse 2s ease-in-out infinite",
+                          transform: "translate(-50%, -50%)",
+                        }}
+                        title={m.title}
+                      />
+                    </OverlayView>
                   ))}
+                  <style>{`
+                    @keyframes pulse {
+                      0% {
+                        transform: translate(-50%, -50%) scale(1);
+                        opacity: 1;
+                      }
+                      50% {
+                        transform: translate(-50%, -50%) scale(1.2);
+                        opacity: 0.7;
+                      }
+                      100% {
+                        transform: translate(-50%, -50%) scale(1);
+                        opacity: 1;
+                      }
+                    }
+                  `}</style>
                 </GoogleMap>
               ) : (
                 <View

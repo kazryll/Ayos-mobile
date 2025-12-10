@@ -13,6 +13,7 @@ import {
 } from "@/services/userService";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { GoogleMap, OverlayView, useJsApiLoader } from "@react-google-maps/api";
+import * as Location from "expo-location";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -72,9 +73,16 @@ export default function HomeScreen() {
     [key: string]: any[];
   }>({});
   const [mapReloadKey, setMapReloadKey] = useState(0);
+  const [userLocation, setUserLocation] = useState<{
+    latitude: number;
+    longitude: number;
+    address?: string;
+  } | null>(null);
+  const [locationLoading, setLocationLoading] = useState(false);
 
   useEffect(() => {
     loadHomeData();
+    requestUserLocation();
   }, []);
 
   // Set up real-time notification listener
@@ -105,20 +113,93 @@ export default function HomeScreen() {
     }, [])
   );
 
+  const requestUserLocation = async () => {
+    try {
+      setLocationLoading(true);
+      
+      // Request location permissions
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      
+      if (status !== "granted") {
+        Alert.alert(
+          "Location Permission Required",
+          "Please enable location access to see issues near you.",
+          [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Settings",
+              onPress: () => {
+                if (Platform.OS === "ios") {
+                  Linking.openURL("app-settings:");
+                } else {
+                  Linking.openSettings();
+                }
+              },
+            },
+          ]
+        );
+        setLocationLoading(false);
+        return;
+      }
+
+      // Get current position with high accuracy
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+
+      // Reverse geocode to get address
+      let address = "Your Location";
+      try {
+        const [geocode] = await Location.reverseGeocodeAsync({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        });
+        if (geocode) {
+          const parts = [];
+          if (geocode.district || geocode.subregion) parts.push(geocode.district || geocode.subregion);
+          if (geocode.city) parts.push(geocode.city);
+          address = parts.join(", ") || "Your Location";
+        }
+      } catch (geocodeError) {
+        console.warn("Geocoding failed:", geocodeError);
+      }
+
+      setUserLocation({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        address,
+      });
+    } catch (error) {
+      console.error("Error getting user location:", error);
+      Alert.alert(
+        "Location Error",
+        "Unable to get your current location. Please check your device settings."
+      );
+    } finally {
+      setLocationLoading(false);
+    }
+  };
+
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = async () => {
     setRefreshing(true);
     await loadHomeData();
+    await requestUserLocation();
     setRefreshing(false);
   };
 
-  // Map center and markers (use first available report location or fallback)
+  // Map center and markers (use user location if available, else first report, else fallback)
   const mapDefaultCenter = { lat: 16.4023, lng: 120.596 };
   const firstGeo = feedReports.find(
     (r) => r.location && (r.location.latitude || r.location.lat)
   );
-  const mapCenter = firstGeo
+  const mapCenter = userLocation
+    ? {
+        lat: userLocation.latitude,
+        lng: userLocation.longitude,
+      }
+    : firstGeo
     ? {
         lat: firstGeo.location.latitude || firstGeo.location.lat,
         lng: firstGeo.location.longitude || firstGeo.location.lng,
@@ -176,6 +257,7 @@ export default function HomeScreen() {
 
   const mapHtml = useMemo(() => {
     const markers = JSON.stringify(mapMarkers);
+    const userLoc = userLocation ? JSON.stringify(userLocation) : 'null';
     return `
       <!DOCTYPE html>
       <html>
@@ -213,10 +295,76 @@ export default function HomeScreen() {
             const center = { lat: ${mapCenter.lat}, lng: ${mapCenter.lng} };
             const map = new google.maps.Map(document.getElementById('map'), {
               center,
-              zoom: 13,
+              zoom: 14,
               disableDefaultUI: true
             });
             const markers = ${markers};
+            const userLocation = ${userLoc};
+
+            // Add user location marker if available
+            if (userLocation) {
+              const userMarker = document.createElement('div');
+              userMarker.style.width = '24px';
+              userMarker.style.height = '24px';
+              userMarker.style.borderRadius = '50%';
+              userMarker.style.backgroundColor = '#FF4444';
+              userMarker.style.border = '4px solid white';
+              userMarker.style.boxShadow = '0 2px 8px rgba(255, 68, 68, 0.6)';
+              userMarker.style.cursor = 'pointer';
+              userMarker.style.display = 'flex';
+              userMarker.style.alignItems = 'center';
+              userMarker.style.justifyContent = 'center';
+
+              const innerDot = document.createElement('div');
+              innerDot.style.width = '8px';
+              innerDot.style.height = '8px';
+              innerDot.style.borderRadius = '50%';
+              innerDot.style.backgroundColor = 'white';
+              userMarker.appendChild(innerDot);
+
+              class UserOverlay extends google.maps.OverlayView {
+                constructor(position, element) {
+                  super();
+                  this.position = position;
+                  this.element = element;
+                }
+
+                onAdd() {
+                  const panes = this.getPanes();
+                  panes.overlayMouseTarget.appendChild(this.element);
+
+                  this.element.addEventListener('click', () => {
+                    const infoWindow = new google.maps.InfoWindow({
+                      content: '<div style=\"padding: 8px; font-family: sans-serif;\"><strong>You are here</strong></div>',
+                      position: this.position
+                    });
+                    infoWindow.open(map);
+                  });
+                }
+
+                draw() {
+                  const projection = this.getProjection();
+                  const point = projection.fromLatLngToDivPixel(this.position);
+                  if (point) {
+                    this.element.style.position = 'absolute';
+                    this.element.style.left = (point.x - 12) + 'px';
+                    this.element.style.top = (point.y - 12) + 'px';
+                  }
+                }
+
+                onRemove() {
+                  if (this.element.parentNode) {
+                    this.element.parentNode.removeChild(this.element);
+                  }
+                }
+              }
+
+              const userOverlay = new UserOverlay(
+                new google.maps.LatLng(userLocation.latitude, userLocation.longitude),
+                userMarker
+              );
+              userOverlay.setMap(map);
+            }
 
             markers.forEach(marker => {
               // Create custom circle marker with pulsing animation
@@ -279,7 +427,7 @@ export default function HomeScreen() {
         </body>
       </html>
     `;
-  }, [mapCenter, mapMarkers]);
+  }, [mapCenter, mapMarkers, userLocation]);
 
   const loadHomeData = async () => {
     try {
@@ -773,7 +921,22 @@ export default function HomeScreen() {
           <View style={styles.issuesHeader}>
             <View>
               <Text style={styles.issuesTitle}>Issues Near You</Text>
-              <Text style={styles.issuesSubtitle}>Bakakeng, Baguio City</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                <Text style={styles.issuesSubtitle}>
+                  {locationLoading
+                    ? "Getting your location..."
+                    : userLocation?.address || "Baguio City"}
+                </Text>
+                {!locationLoading && (
+                  <TouchableOpacity onPress={requestUserLocation}>
+                    <Ionicons
+                      name="locate"
+                      size={14}
+                      color={theme.Colors.primary}
+                    />
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
             <TouchableOpacity style={styles.fullMapButton}>
               <Text style={styles.fullMapButtonText}>Full Map</Text>
@@ -789,9 +952,48 @@ export default function HomeScreen() {
                     borderRadius: 12,
                   }}
                   center={mapCenter}
-                  zoom={13}
+                  zoom={14}
                   options={{ disableDefaultUI: true }}
                 >
+                  {/* User location marker */}
+                  {userLocation && (
+                    <OverlayView
+                      position={{
+                        lat: userLocation.latitude,
+                        lng: userLocation.longitude,
+                      }}
+                      mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+                    >
+                      <div
+                        style={{
+                          width: "24px",
+                          height: "24px",
+                          borderRadius: "50%",
+                          backgroundColor: "#FF4444",
+                          border: "4px solid white",
+                          boxShadow: "0 2px 8px rgba(255, 68, 68, 0.6)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor: "pointer",
+                          transform: "translate(-50%, -50%)",
+                          position: "relative",
+                        }}
+                        title="You are here"
+                      >
+                        <div
+                          style={{
+                            width: "8px",
+                            height: "8px",
+                            borderRadius: "50%",
+                            backgroundColor: "white",
+                          }}
+                        />
+                      </div>
+                    </OverlayView>
+                  )}
+                  
+                  {/* Report markers */}
                   {mapMarkers.map((m) => (
                     <OverlayView
                       key={m.id}
@@ -861,18 +1063,22 @@ export default function HomeScreen() {
             )}
           </View>
           <View style={styles.issuesLegend}>
-            <View style={styles.legendItem}>
-              <View
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: 4,
-                  backgroundColor: "#167048",
-                  marginRight: 6,
-                }}
-              />
-              <Text style={styles.legendText}>You</Text>
-            </View>
+            {userLocation && (
+              <View style={styles.legendItem}>
+                <View
+                  style={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: 5,
+                    backgroundColor: "#FF4444",
+                    borderWidth: 2,
+                    borderColor: "white",
+                    marginRight: 6,
+                  }}
+                />
+                <Text style={styles.legendText}>You</Text>
+              </View>
+            )}
             <View style={styles.legendItem}>
               <View
                 style={{

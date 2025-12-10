@@ -482,23 +482,65 @@ export default function HomeScreen() {
   };
 
   const getReportCategory = (report: any) => {
-    return report && report.category ? report.category : "General";
+    // Check both aiGeneratedAnalysis.category and top-level category
+    if (report?.aiGeneratedAnalysis?.category) {
+      return report.aiGeneratedAnalysis.category;
+    }
+    if (report?.category) {
+      return report.category;
+    }
+    return "General";
   };
 
-  const getCategoryColor = (report: any) => {
-    const category = getReportCategory(report);
-    switch (category.toLowerCase()) {
-      case "road":
-        return "#FF6B6B"; // Red
-      case "nature":
-        return "#51CF66"; // Green
-      case "veterinary":
-        return "#FFD93D"; // Yellow
-      case "disturbance":
-        return "#A78BFA"; // Purple
-      default:
-        return "#6C757D"; // Gray
-    }
+  const getCategoryDisplayName = (category: string) => {
+    const categoryMap: { [key: string]: string } = {
+      "Waste Management & Sanitation": "Waste & Sanitation",
+      "Water Supply & Drainage": "Water & Drainage",
+      "Electricity & Street Lighting": "Electricity & Lighting",
+      "Public Infrastructure & Facilities": "Infrastructure",
+      "Transportation & Traffic Management": "Transportation",
+      "Community Amenities & Environmental Concerns": "Environment",
+      "Public Health & Safety (Non-Emergency)": "Health & Safety",
+      "Animal & Veterinary Concerns": "Animal Welfare",
+      "Public Order & Minor Disturbances": "Public Order",
+      "Social Welfare & Accessibility": "Social Welfare",
+      "Governance & Transparency Reports": "Governance",
+    };
+    return categoryMap[category] || category;
+  };
+
+  const getCategoryIcon = (category: string) => {
+    const iconMap: { [key: string]: string } = {
+      "Waste Management & Sanitation": "trash-outline",
+      "Water Supply & Drainage": "water-outline",
+      "Electricity & Street Lighting": "bulb-outline",
+      "Public Infrastructure & Facilities": "business-outline",
+      "Transportation & Traffic Management": "car-outline",
+      "Community Amenities & Environmental Concerns": "leaf-outline",
+      "Public Health & Safety (Non-Emergency)": "medical-outline",
+      "Animal & Veterinary Concerns": "paw-outline",
+      "Public Order & Minor Disturbances": "alert-circle-outline",
+      "Social Welfare & Accessibility": "people-outline",
+      "Governance & Transparency Reports": "document-text-outline",
+    };
+    return iconMap[category] || "information-circle-outline";
+  };
+
+  const getCategoryColor = (category: string) => {
+    const colorMap: { [key: string]: string } = {
+      "Waste Management & Sanitation": "#8B4513", // Brown
+      "Water Supply & Drainage": "#1E90FF", // Dodger Blue
+      "Electricity & Street Lighting": "#FFD700", // Gold
+      "Public Infrastructure & Facilities": "#708090", // Slate Gray
+      "Transportation & Traffic Management": "#FF6347", // Tomato Red
+      "Community Amenities & Environmental Concerns": "#32CD32", // Lime Green
+      "Public Health & Safety (Non-Emergency)": "#DC143C", // Crimson
+      "Animal & Veterinary Concerns": "#FF69B4", // Hot Pink
+      "Public Order & Minor Disturbances": "#FF8C00", // Dark Orange
+      "Social Welfare & Accessibility": "#9370DB", // Medium Purple
+      "Governance & Transparency Reports": "#4682B4", // Steel Blue
+    };
+    return colorMap[category] || "#6C757D"; // Default Gray
   };
 
   const handleVote = async (reportId: string, voteType: "up" | "down") => {
@@ -894,43 +936,96 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
 
-          {topReports.map((report, idx) => (
-            <View
-              key={report.id}
-              style={[
-                styles.reportItem,
-                { flexDirection: "column", alignItems: "flex-start" },
-              ]}
-            >
-              <View style={{ width: "100%" }}>
-                <View style={styles.reportHeader}>
-                  <Text style={styles.reportTitle}>
-                    {report.aiGeneratedAnalysis?.title ||
-                      report.originalDescription?.slice(0, 80) ||
-                      "Untitled"}
-                  </Text>
-                  <View
-                    style={[
-                      styles.categoryBadge,
-                      { backgroundColor: getCategoryColor(report) },
-                    ]}
-                  >
-                    <Text style={styles.categoryBadgeText}>
-                      {report.aiGeneratedAnalysis?.category || "General"}
-                    </Text>
+          {topReports.map((report, idx) => {
+            const category = getReportCategory(report);
+            return (
+              <View
+                key={report.id}
+                style={[
+                  styles.reportItem,
+                  { flexDirection: "column", alignItems: "flex-start" },
+                ]}
+              >
+                <View style={{ width: "100%" }}>
+                  <View style={styles.reportAuthorRow}>
+                    <View style={styles.reportAuthorAvatar}>
+                      <Text style={styles.reportAuthorAvatarText}>
+                        {(report.authorFirstName || "A").slice(0, 2).toUpperCase()}
+                      </Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.reportAuthor}>
+                        {report.authorFirstName || "Anonymous"}
+                      </Text>
+                      <View style={styles.reportMetaRow}>
+                        <Text style={styles.reportMeta}>
+                          {report.location?.barangay || report.location?.city || "Baguio City"}
+                        </Text>
+                        <Text style={styles.reportMetaDivider}>•</Text>
+                        <Text style={styles.reportMeta}>
+                          {(() => {
+                            const date = report.createdAt?.toDate?.() || new Date(report.createdAt);
+                            const now = new Date();
+                            const diffMs = now.getTime() - date.getTime();
+                            const diffMins = Math.floor(diffMs / 60000);
+                            const diffHours = Math.floor(diffMs / 3600000);
+                            const diffDays = Math.floor(diffMs / 86400000);
+
+                            if (diffMins < 60) return `${diffMins}m ago`;
+                            if (diffHours < 24) return `${diffHours}h ago`;
+                            if (diffDays < 7) return `${diffDays}d ago`;
+                            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                          })()}
+                        </Text>
+                      </View>
+                    </View>
                   </View>
+                  <View style={styles.reportHeader}>
+                    <Text style={styles.reportTitle}>
+                      {report.aiGeneratedAnalysis?.title ||
+                        report.originalDescription?.slice(0, 80) ||
+                        "Untitled"}
+                    </Text>
+                    <View
+                      style={[
+                        styles.categoryBadge,
+                        { backgroundColor: getCategoryColor(category) },
+                      ]}
+                    >
+                      <Ionicons
+                        name={getCategoryIcon(category) as any}
+                        size={12}
+                        color="white"
+                        style={{ marginRight: 4 }}
+                      />
+                      <Text style={styles.categoryBadgeText}>
+                        {getCategoryDisplayName(category)}
+                      </Text>
+                    </View>
                 </View>
-                <Text style={styles.reportLocation}>
-                  {report.authorFirstName} •{" "}
-                  {new Date(report.createdAt).toLocaleString()}
-                </Text>
-                <Text style={{ marginTop: 8, color: "#34495e" }}>
+                <Text style={styles.reportSummary}>
                   {report.aiGeneratedAnalysis?.summary ||
-                    report.originalDescription}
+                    report.originalDescription?.slice(0, 120) + "..."}
                 </Text>
+                {report.images && report.images.length > 0 && (
+                  <View style={styles.reportImagesContainer}>
+                    {report.images.slice(0, 2).map((imageUrl: string, imgIdx: number) => (
+                      <Image
+                        key={imgIdx}
+                        source={{ uri: imageUrl }}
+                        style={[
+                          styles.reportImage,
+                          report.images.length === 1 && styles.reportImageSingle
+                        ]}
+                        resizeMode="cover"
+                      />
+                    ))}
+                  </View>
+                )}
               </View>
             </View>
-          ))}
+            );
+          })}
         </View>
 
         {/* Removed 'You' section: verified report count will be shown in profile/dedicated page */}
@@ -1241,6 +1336,30 @@ const styles = StyleSheet.create({
   reportInfo: {
     flex: 1,
   },
+  reportAuthorRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 12,
+  },
+  reportAuthorAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#167048",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 8,
+  },
+  reportAuthorAvatarText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 11,
+  },
+  reportAuthor: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#2c3e50",
+  },
   reportHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1254,13 +1373,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   categoryBadge: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
     marginLeft: 8,
   },
   categoryBadgeText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "600",
     color: "white",
   },
@@ -1272,6 +1393,41 @@ const styles = StyleSheet.create({
   reportDate: {
     fontSize: 10,
     color: "#bdc3c7",
+  },
+  reportSummary: {
+    marginTop: 8,
+    fontSize: 13,
+    color: "#34495e",
+    lineHeight: 20,
+  },
+  reportMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 2,
+  },
+  reportMeta: {
+    fontSize: 11,
+    color: "#95a5a6",
+  },
+  reportMetaDivider: {
+    fontSize: 11,
+    color: "#95a5a6",
+    marginHorizontal: 6,
+  },
+  reportImagesContainer: {
+    flexDirection: "row",
+    marginTop: 12,
+    gap: 8,
+  },
+  reportImage: {
+    flex: 1,
+    height: 180,
+    borderRadius: 8,
+    backgroundColor: "#ecf0f1",
+  },
+  reportImageSingle: {
+    flex: 0,
+    width: "100%",
   },
   statusBadge: {
     paddingHorizontal: 10,

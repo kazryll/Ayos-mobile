@@ -16,6 +16,7 @@ import {
     Alert,
     Dimensions,
     FlatList,
+    Image,
     RefreshControl,
     StyleSheet,
     Text,
@@ -103,14 +104,22 @@ export default function ReportsPage() {
             const profile = r.reportedBy
               ? await getUserProfile(r.reportedBy)
               : null;
+            const displayName =
+              profile?.displayName || profile?.name || r.reportedBy || "User";
+            const firstName = displayName.split(" ")[0];
             return {
               ...r,
-              authorName:
-                profile?.displayName || profile?.name || r.reportedBy || "User",
+              authorName: displayName,
+              authorFirstName: firstName,
             };
           } catch (e) {
             console.warn("Could not load profile for report:", r.id, e);
-            return { ...r, authorName: r.reportedBy || "User" };
+            const fallbackName = r.reportedBy || "User";
+            return {
+              ...r,
+              authorName: fallbackName,
+              authorFirstName: fallbackName.split(" ")[0],
+            };
           }
         })
       );
@@ -361,6 +370,67 @@ export default function ReportsPage() {
     }
   };
 
+  const getReportCategory = (report: any) => {
+    if (report?.aiGeneratedAnalysis?.category) {
+      return report.aiGeneratedAnalysis.category;
+    }
+    if (report?.category) {
+      return report.category;
+    }
+    return "General";
+  };
+
+  const getCategoryDisplayName = (category: string) => {
+    const categoryMap: { [key: string]: string } = {
+      "Waste Management & Sanitation": "Waste & Sanitation",
+      "Water Supply & Drainage": "Water & Drainage",
+      "Electricity & Street Lighting": "Electricity & Lighting",
+      "Public Infrastructure & Facilities": "Infrastructure",
+      "Transportation & Traffic Management": "Transportation",
+      "Community Amenities & Environmental Concerns": "Environment",
+      "Public Health & Safety (Non-Emergency)": "Health & Safety",
+      "Animal & Veterinary Concerns": "Animal Welfare",
+      "Public Order & Minor Disturbances": "Public Order",
+      "Social Welfare & Accessibility": "Social Welfare",
+      "Governance & Transparency Reports": "Governance",
+    };
+    return categoryMap[category] || category;
+  };
+
+  const getCategoryIcon = (category: string) => {
+    const iconMap: { [key: string]: string } = {
+      "Waste Management & Sanitation": "trash-outline",
+      "Water Supply & Drainage": "water-outline",
+      "Electricity & Street Lighting": "bulb-outline",
+      "Public Infrastructure & Facilities": "business-outline",
+      "Transportation & Traffic Management": "car-outline",
+      "Community Amenities & Environmental Concerns": "leaf-outline",
+      "Public Health & Safety (Non-Emergency)": "medical-outline",
+      "Animal & Veterinary Concerns": "paw-outline",
+      "Public Order & Minor Disturbances": "alert-circle-outline",
+      "Social Welfare & Accessibility": "people-outline",
+      "Governance & Transparency Reports": "document-text-outline",
+    };
+    return iconMap[category] || "information-circle-outline";
+  };
+
+  const getCategoryColor = (category: string) => {
+    const colorMap: { [key: string]: string } = {
+      "Waste Management & Sanitation": "#8B4513",
+      "Water Supply & Drainage": "#1E90FF",
+      "Electricity & Street Lighting": "#FFD700",
+      "Public Infrastructure & Facilities": "#708090",
+      "Transportation & Traffic Management": "#FF6347",
+      "Community Amenities & Environmental Concerns": "#32CD32",
+      "Public Health & Safety (Non-Emergency)": "#DC143C",
+      "Animal & Veterinary Concerns": "#FF69B4",
+      "Public Order & Minor Disturbances": "#FF8C00",
+      "Social Welfare & Accessibility": "#9370DB",
+      "Governance & Transparency Reports": "#4682B4",
+    };
+    return colorMap[category] || "#6C757D";
+  };
+
   const renderItem = ({ item }: { item: any }) => {
     const votes = (item.upvotes || 0) + (item.downvotes || 0);
     const statusKey = (item.status || "for_approval").toLowerCase();
@@ -375,42 +445,104 @@ export default function ReportsPage() {
       )
       .join(" ")
       .trim();
+    const category = getReportCategory(item);
 
     return (
       <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.cardTitle}>
-              {item.aiGeneratedAnalysis?.title ||
-                item.originalDescription?.slice(0, 80) ||
-                "Untitled report"}
-            </Text>
-            <Text style={styles.cardMeta}>
-              {item.authorName} • {item.location?.address || "Unknown location"}
+        {/* Author Row with Avatar */}
+        <View style={styles.authorRow}>
+          <View style={styles.authorAvatar}>
+            <Text style={styles.authorAvatarText}>
+              {(item.authorFirstName || "A").slice(0, 2).toUpperCase()}
             </Text>
           </View>
-          <View style={[styles.statusBadge, { backgroundColor: badgeColor }]}>
-            <Text style={styles.statusBadgeText}>{statusLabel}</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.authorName}>
+              {item.authorFirstName || "Anonymous"}
+            </Text>
+            <View style={styles.metaRow}>
+              <Text style={styles.metaText}>
+                {item.location?.barangay ||
+                  item.location?.city ||
+                  "Baguio City"}
+              </Text>
+              <Text style={styles.metaDivider}>•</Text>
+              <Text style={styles.metaText}>
+                {(() => {
+                  const date =
+                    item.createdAt?.toDate?.() || new Date(item.createdAt);
+                  const now = new Date();
+                  const diffMs = now.getTime() - date.getTime();
+                  const diffMins = Math.floor(diffMs / 60000);
+                  const diffHours = Math.floor(diffMs / 3600000);
+                  const diffDays = Math.floor(diffMs / 86400000);
+
+                  if (diffMins < 60) return `${diffMins}m ago`;
+                  if (diffHours < 24) return `${diffHours}h ago`;
+                  if (diffDays < 7) return `${diffDays}d ago`;
+                  return date.toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                  });
+                })()}
+              </Text>
+            </View>
           </View>
         </View>
 
+        {/* Title Row with Category and Status Badges */}
+        <View style={styles.titleRow}>
+          <Text style={styles.cardTitle}>
+            {item.aiGeneratedAnalysis?.title ||
+              item.originalDescription?.slice(0, 80) ||
+              "Untitled report"}
+          </Text>
+          <View style={styles.badgesRow}>
+            <View
+              style={[
+                styles.categoryBadge,
+                { backgroundColor: getCategoryColor(category) },
+              ]}
+            >
+              <Ionicons
+                name={getCategoryIcon(category) as any}
+                size={10}
+                color="white"
+                style={{ marginRight: 3 }}
+              />
+              <Text style={styles.categoryBadgeText}>
+                {getCategoryDisplayName(category)}
+              </Text>
+            </View>
+            <View style={[styles.statusBadge, { backgroundColor: badgeColor }]}>
+              <Text style={styles.statusBadgeText}>{statusLabel}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Summary */}
         <Text style={styles.cardSummary}>
           {item.aiGeneratedAnalysis?.summary || item.originalDescription}
         </Text>
 
-        <View style={styles.cardMetaRow}>
-          <View style={styles.footerPill}>
-            <MaterialIcons
-              name="bar-chart"
-              size={16}
-              color="#6C757D"
-              style={{ marginRight: 6 }}
-            />
-            <Text style={styles.footerPillText}>{votes} votes</Text>
+        {/* Images */}
+        {item.images && item.images.length > 0 && (
+          <View style={styles.imagesContainer}>
+            {item.images.slice(0, 2).map((imageUrl: string, imgIdx: number) => (
+              <Image
+                key={imgIdx}
+                source={{ uri: imageUrl }}
+                style={[
+                  styles.reportImage,
+                  item.images.length === 1 && styles.reportImageSingle,
+                ]}
+                resizeMode="cover"
+              />
+            ))}
           </View>
-          <Text style={styles.cardDate}>{formatShortDate(item.createdAt)}</Text>
-        </View>
+        )}
 
+        {/* Action Row with Voting */}
         <View style={styles.actionRow}>
           <TouchableOpacity
             style={styles.voteButton}
@@ -596,24 +728,13 @@ export default function ReportsPage() {
             tintColor={theme.Colors.primary}
           />
         }
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>No reports found</Text>
-            <Text style={styles.emptySubtitle}>
-              Try adjusting your filters or search keywords.
-            </Text>
-          </View>
-        }
-        showsVerticalScrollIndicator={false}
-        style={{ flex: 1 }}
       />
-
       <BottomNav />
     </View>
   );
 }
 
-const ScrollChips = ({
+function ScrollChips({
   items,
   activeKey,
   onSelect,
@@ -621,45 +742,47 @@ const ScrollChips = ({
   items: { key: string; label: string }[];
   activeKey: string;
   onSelect: (key: string) => void;
-}) => (
-  <FlatList
-    data={items}
-    keyExtractor={(item) => item.key}
-    horizontal
-    showsHorizontalScrollIndicator={false}
-    contentContainerStyle={{ paddingHorizontal: 20 }}
-    renderItem={({ item, index }) => (
-      <TouchableOpacity
-        style={[
-          styles.filterChip,
-          { marginRight: index === items.length - 1 ? 0 : 8 },
-          activeKey === item.key && styles.filterChipActive,
-        ]}
-        onPress={() => onSelect(item.key)}
-      >
-        <Text
-          style={[
-            styles.filterChipText,
-            activeKey === item.key && styles.filterChipTextActive,
-          ]}
-        >
-          {item.label}
-        </Text>
-      </TouchableOpacity>
-    )}
-  />
-);
+}) {
+  return (
+    <View style={{ paddingHorizontal: 20 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+        {items.map((item) => (
+          <TouchableOpacity
+            key={item.key}
+            onPress={() => onSelect(item.key)}
+            style={[
+              styles.filterChip,
+              activeKey === item.key && styles.filterChipActive,
+            ]}
+          >
+            <Text
+              style={[
+                styles.filterChipText,
+                activeKey === item.key && styles.filterChipTextActive,
+              ]}
+            >
+              {item.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
+  );
+}
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.Colors.background },
-  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
+  container: { flex: 1, backgroundColor: "#F8FAFC" },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F8FAFC",
+  },
   hero: {
     height: HERO_HEIGHT,
-    minHeight: 70,
-    paddingHorizontal: 20,
     justifyContent: "center",
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 40,
   },
   heroRow: {
     flexDirection: "row",
@@ -728,40 +851,102 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 3,
   },
-  cardHeader: {
+  authorRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: 12,
-    gap: 12,
+  },
+  authorAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#167048",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 8,
+  },
+  authorAvatarText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 11,
+  },
+  authorName: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#2c3e50",
+  },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 2,
+  },
+  metaText: {
+    fontSize: 11,
+    color: "#95a5a6",
+  },
+  metaDivider: {
+    fontSize: 11,
+    color: "#95a5a6",
+    marginHorizontal: 6,
+  },
+  titleRow: {
+    marginBottom: 8,
   },
   cardTitle: {
     fontSize: 16,
     fontWeight: "700",
     color: "#0F172A",
-    marginBottom: 4,
+    marginBottom: 8,
   },
-  cardMeta: {
-    fontSize: 12,
-    color: "#64748B",
+  badgesRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  categoryBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  categoryBadgeText: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: "white",
   },
   statusBadge: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
   },
   statusBadgeText: {
     color: "#fff",
-    fontSize: 11,
-    fontWeight: "700",
+    fontSize: 10,
+    fontWeight: "600",
   },
   cardSummary: {
-    color: "#1E293B",
-    fontSize: 14,
+    color: "#34495e",
+    fontSize: 13,
     lineHeight: 20,
-    marginBottom: 16,
+    marginBottom: 12,
   },
-  cardMetaRow: {
+  imagesContainer: {
+    flexDirection: "row",
+    marginBottom: 12,
+    gap: 8,
+  },
+  reportImage: {
+    flex: 1,
+    height: 180,
+    borderRadius: 8,
+    backgroundColor: "#ecf0f1",
+  },
+  reportImageSingle: {
+    flex: 0,
+    width: "100%",
+  },
+  actionRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",

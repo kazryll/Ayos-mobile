@@ -528,19 +528,19 @@ export default function HomeScreen() {
 
   const getCategoryColor = (category: string) => {
     const colorMap: { [key: string]: string } = {
-      "Waste Management & Sanitation": "#8B4513", // Brown
-      "Water Supply & Drainage": "#1E90FF", // Dodger Blue
-      "Electricity & Street Lighting": "#FFD700", // Gold
-      "Public Infrastructure & Facilities": "#708090", // Slate Gray
-      "Transportation & Traffic Management": "#FF6347", // Tomato Red
-      "Community Amenities & Environmental Concerns": "#32CD32", // Lime Green
-      "Public Health & Safety (Non-Emergency)": "#DC143C", // Crimson
-      "Animal & Veterinary Concerns": "#FF69B4", // Hot Pink
-      "Public Order & Minor Disturbances": "#FF8C00", // Dark Orange
-      "Social Welfare & Accessibility": "#9370DB", // Medium Purple
-      "Governance & Transparency Reports": "#4682B4", // Steel Blue
+      "Waste Management & Sanitation": "#A0826D", // Soft Brown
+      "Water Supply & Drainage": "#6BB6FF", // Sky Blue
+      "Electricity & Street Lighting": "#E8B339", // Warm Gold
+      "Public Infrastructure & Facilities": "#8B9DAF", // Soft Slate
+      "Transportation & Traffic Management": "#FF7F6E", // Coral
+      "Community Amenities & Environmental Concerns": "#6BCF7F", // Mint Green
+      "Public Health & Safety (Non-Emergency)": "#E85D6B", // Rose
+      "Animal & Veterinary Concerns": "#FF8BBF", // Soft Pink
+      "Public Order & Minor Disturbances": "#FFA347", // Peach
+      "Social Welfare & Accessibility": "#B090E0", // Lavender
+      "Governance & Transparency Reports": "#6B9FD4", // Soft Blue
     };
-    return colorMap[category] || "#6C757D"; // Default Gray
+    return colorMap[category] || "#8B94A1"; // Soft Gray
   };
 
   const handleVote = async (reportId: string, voteType: "up" | "down") => {

@@ -416,19 +416,19 @@ export default function ReportsPage() {
 
   const getCategoryColor = (category: string) => {
     const colorMap: { [key: string]: string } = {
-      "Waste Management & Sanitation": "#8B4513",
-      "Water Supply & Drainage": "#1E90FF",
-      "Electricity & Street Lighting": "#FFD700",
-      "Public Infrastructure & Facilities": "#708090",
-      "Transportation & Traffic Management": "#FF6347",
-      "Community Amenities & Environmental Concerns": "#32CD32",
-      "Public Health & Safety (Non-Emergency)": "#DC143C",
-      "Animal & Veterinary Concerns": "#FF69B4",
-      "Public Order & Minor Disturbances": "#FF8C00",
-      "Social Welfare & Accessibility": "#9370DB",
-      "Governance & Transparency Reports": "#4682B4",
+      "Waste Management & Sanitation": "#A0826D",
+      "Water Supply & Drainage": "#6BB6FF",
+      "Electricity & Street Lighting": "#E8B339",
+      "Public Infrastructure & Facilities": "#8B9DAF",
+      "Transportation & Traffic Management": "#FF7F6E",
+      "Community Amenities & Environmental Concerns": "#6BCF7F",
+      "Public Health & Safety (Non-Emergency)": "#E85D6B",
+      "Animal & Veterinary Concerns": "#FF8BBF",
+      "Public Order & Minor Disturbances": "#FFA347",
+      "Social Welfare & Accessibility": "#B090E0",
+      "Governance & Transparency Reports": "#6B9FD4",
     };
-    return colorMap[category] || "#6C757D";
+    return colorMap[category] || "#8B94A1";
   };
 
   const renderItem = ({ item }: { item: any }) => {

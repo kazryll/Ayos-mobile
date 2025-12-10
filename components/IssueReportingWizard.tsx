@@ -262,8 +262,8 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
 
       case WizardStep.SUBMISSION_SUCCESS:
         return (
-          <ScrollView 
-            style={styles.stepContainer} 
+          <ScrollView
+            style={styles.stepContainer}
             contentContainerStyle={styles.successFull}
           >
             <View style={styles.successContainer}>

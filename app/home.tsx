@@ -217,7 +217,7 @@ export default function HomeScreen() {
               disableDefaultUI: true
             });
             const markers = ${markers};
-            
+
             markers.forEach(marker => {
               // Create custom circle marker with pulsing animation
               const circleMarker = document.createElement('div');
@@ -229,7 +229,7 @@ export default function HomeScreen() {
               circleMarker.style.border = '3px solid white';
               circleMarker.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
               circleMarker.style.cursor = 'pointer';
-              
+
               // Create overlay
               class CircleOverlay extends google.maps.OverlayView {
                 constructor(position, element) {
@@ -237,11 +237,11 @@ export default function HomeScreen() {
                   this.position = position;
                   this.element = element;
                 }
-                
+
                 onAdd() {
                   const panes = this.getPanes();
                   panes.overlayMouseTarget.appendChild(this.element);
-                  
+
                   // Add click listener
                   this.element.addEventListener('click', () => {
                     const infoWindow = new google.maps.InfoWindow({
@@ -251,7 +251,7 @@ export default function HomeScreen() {
                     infoWindow.open(map);
                   });
                 }
-                
+
                 draw() {
                   const projection = this.getProjection();
                   const point = projection.fromLatLngToDivPixel(this.position);
@@ -261,14 +261,14 @@ export default function HomeScreen() {
                     this.element.style.top = (point.y - 8) + 'px';
                   }
                 }
-                
+
                 onRemove() {
                   if (this.element.parentNode) {
                     this.element.parentNode.removeChild(this.element);
                   }
                 }
               }
-              
+
               const overlay = new CircleOverlay(
                 new google.maps.LatLng(marker.position.lat, marker.position.lng),
                 circleMarker

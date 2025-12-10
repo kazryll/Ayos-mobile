@@ -5,6 +5,7 @@ import {
     subscribeToNotifications,
 } from "@/services/notifications";
 import { getUserProfile } from "@/services/userService";
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { collection, doc, getDoc, getDocs, limit, query, where } from "firebase/firestore";
@@ -296,7 +297,7 @@ export default function NotificationsScreen() {
             style={styles.backButton}
             onPress={() => router.back()}
           >
-            <Text style={styles.backButtonText}>←</Text>
+            <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.heroTitle}>Notifications</Text>
           <View style={{ width: 40 }} />

@@ -11,6 +11,7 @@ import {
     getUserProfile,
     getUserStats,
 } from "@/services/userService";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -32,17 +33,6 @@ import BottomNav from "../components/BottomNav";
 import { auth } from "../config/firebase";
 import theme from "../config/theme";
 
-// Import all vote and comment icons
-const arrowUpwardOutline = require("@/assets/icons/arrow-upward-outline.png");
-const arrowUpwardBold = require("@/assets/icons/arrow-upward-bold.png");
-const arrowDownwardOutline = require("@/assets/icons/arrow-downward-outline.png");
-const arrowDownwardBold = require("@/assets/icons/arrow-downward-bold.png");
-const commentOutline = require("@/assets/icons/comment-outline.png");
-const commentBold = require("@/assets/icons/comment-bold.png");
-const notificationIcon = require("@/assets/icons/notification.png");
-const paperIcon = require("@/assets/icons/paper.png");
-const trophyIcon = require("@/assets/icons/trophy.png");
-const chartBarIcon = require("@/assets/icons/chart-bar.png");
 const ayosLogo = require("@/assets/Ayos-logo.png");
 // Google Maps API key (used for web map rendering)
 const GOOGLE_MAPS_API_KEY = "AIzaSyBRV1JEt_qSWZPxpvouEUNzuPbW5gWW4yc";
@@ -564,9 +554,10 @@ export default function HomeScreen() {
               onPress={() => router.push("/notifications" as any)}
               style={styles.notificationButton}
             >
-              <Image
-                source={notificationIcon}
-                style={styles.notificationIcon}
+              <Ionicons
+                name="notifications-outline"
+                size={24}
+                color={theme.Colors.primary}
               />
               <Text style={styles.notificationCount}>
                 {notifications.filter((n) => !n.read).length}
@@ -581,9 +572,10 @@ export default function HomeScreen() {
             <View style={styles.yourImpactContent}>
               <View style={styles.yourImpactLeft}>
                 <View style={styles.yourImpactIcon}>
-                  <Image
-                    source={paperIcon}
-                    style={{ width: 20, height: 20, tintColor: "white" }}
+                  <Ionicons
+                    name="document-text"
+                    size={20}
+                    color="white"
                   />
                 </View>
                 <View>
@@ -757,14 +749,11 @@ export default function HomeScreen() {
               marginBottom: 12,
             }}
           >
-            <Image
-              source={chartBarIcon}
-              style={{
-                width: 20,
-                height: 20,
-                marginRight: 8,
-                tintColor: theme.Colors.primary,
-              }}
+            <MaterialIcons
+              name="bar-chart"
+              size={20}
+              color={theme.Colors.primary}
+              style={{ marginRight: 8 }}
             />
             <Text style={styles.sectionTitle}>Top Reports</Text>
             <TouchableOpacity
@@ -824,14 +813,11 @@ export default function HomeScreen() {
               marginBottom: 12,
             }}
           >
-            <Image
-              source={trophyIcon}
-              style={{
-                width: 20,
-                height: 20,
-                marginRight: 8,
-                tintColor: theme.Colors.primary,
-              }}
+            <Ionicons
+              name="trophy"
+              size={20}
+              color={theme.Colors.primary}
+              style={{ marginRight: 8 }}
             />
             <Text style={styles.leaderboardTitle}>Leaderboard</Text>
           </View>

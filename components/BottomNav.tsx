@@ -1,4 +1,5 @@
 // components/BottomNav.tsx - Fix the ImageIcon usage
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useState } from "react";
 import {
@@ -11,7 +12,6 @@ import {
 } from "react-native";
 import theme from "../config/theme";
 import { signOut } from "../services/auth";
-import ImageIcon from "./ImageIcon";
 import IssueReportingWizard from "./IssueReportingWizard";
 
 const BottomNav = () => {
@@ -24,11 +24,11 @@ const BottomNav = () => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const navItems = [
-    { key: "home", label: "Home", icon: "home" },
-    { key: "leaderboards", label: "Leaderboards", icon: "trophy" },
-    { key: "report", label: "", icon: "warning", isCTA: true },
-    { key: "activity", label: "Activity", icon: "chart-bar" },
-    { key: "profile", label: "Profile", icon: "user", isProfile: true },
+    { key: "home", label: "Home", icon: "home-outline", iconLib: "Ionicons" },
+    { key: "leaderboards", label: "Leaderboards", icon: "trophy-outline", iconLib: "Ionicons" },
+    { key: "report", label: "", icon: "warning-outline", iconLib: "Ionicons", isCTA: true },
+    { key: "activity", label: "Activity", icon: "bar-chart", iconLib: "MaterialIcons" },
+    { key: "profile", label: "Profile", icon: "person-outline", iconLib: "Ionicons", isProfile: true },
   ];
 
   const handleNavigation = (screenName: string) => {
@@ -113,38 +113,41 @@ const BottomNav = () => {
 
   return (
     <View style={styles.container}>
-      {navItems.map((item) => (
-        <TouchableOpacity
-          key={item.key}
-          style={[
-            styles.navItem,
-            isActive(item.key) && styles.activeNavItem,
-            item.isCTA && styles.ctaButton,
-          ]}
-          onPress={() => handleNavigation(item.key)}
-        >
-          <ImageIcon
-            name={item.icon as any}
-            size={item.isCTA ? 26 : 22}
-            color={
-              item.isCTA
-                ? theme.Colors.background
-                : (isActive(item.key) && theme.Colors.primary) ||
-                  theme.Colors.muted
-            }
-          />
-          {!item.isCTA && (
-            <Text
-              style={[
-                styles.navLabel,
-                isActive(item.key) && styles.activeNavLabel,
-              ]}
-            >
-              {item.label}
-            </Text>
-          )}
-        </TouchableOpacity>
-      ))}
+      {navItems.map((item) => {
+        const IconComponent = item.iconLib === "MaterialIcons" ? MaterialIcons : Ionicons;
+        const iconColor = item.isCTA
+          ? theme.Colors.background
+          : (isActive(item.key) && theme.Colors.primary) || theme.Colors.muted;
+        const iconSize = item.isCTA ? 26 : 22;
+        
+        return (
+          <TouchableOpacity
+            key={item.key}
+            style={[
+              styles.navItem,
+              isActive(item.key) && styles.activeNavItem,
+              item.isCTA && styles.ctaButton,
+            ]}
+            onPress={() => handleNavigation(item.key)}
+          >
+            <IconComponent
+              name={item.icon as any}
+              size={iconSize}
+              color={iconColor}
+            />
+            {!item.isCTA && (
+              <Text
+                style={[
+                  styles.navLabel,
+                  isActive(item.key) && styles.activeNavLabel,
+                ]}
+              >
+                {item.label}
+              </Text>
+            )}
+          </TouchableOpacity>
+        );
+      })}
 
       {/* Reporting Wizard Modal - Controlled by BottomNav */}
       <Modal

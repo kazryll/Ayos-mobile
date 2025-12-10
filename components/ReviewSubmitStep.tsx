@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useState } from "react";
@@ -194,8 +195,10 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({
 
         <View style={styles.aiNote}>
           <View style={styles.aiNoteContent}>
-            <Image
-              source={require("../assets/icons/information.png")}
+            <Ionicons
+              name="information-circle"
+              size={20}
+              color={theme.Colors.primary}
               style={styles.aiNoteImage}
             />
             <Text style={styles.aiNoteText}>

@@ -7,6 +7,7 @@ import {
   voteReport,
 } from "@/services/reports";
 import { getUserProfile } from "@/services/userService";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
@@ -25,14 +26,6 @@ import {
 } from "react-native";
 import BottomNav from "../components/BottomNav";
 import { auth } from "../config/firebase";
-
-const arrowUpwardOutline = require("@/assets/icons/arrow-upward-outline.png");
-const arrowUpwardBold = require("@/assets/icons/arrow-upward-bold.png");
-const arrowDownwardOutline = require("@/assets/icons/arrow-downward-outline.png");
-const arrowDownwardBold = require("@/assets/icons/arrow-downward-bold.png");
-const commentOutline = require("@/assets/icons/comment-outline.png");
-const commentBold = require("@/assets/icons/comment-bold.png");
-const chartBarIcon = require("@/assets/icons/chart-bar.png");
 
 const HERO_HEIGHT = Dimensions.get("window").height * 0.1;
 
@@ -408,9 +401,11 @@ export default function ReportsPage() {
 
         <View style={styles.cardMetaRow}>
           <View style={styles.footerPill}>
-            <Image
-              source={chartBarIcon}
-              style={{ width: 16, height: 16, marginRight: 6 }}
+            <MaterialIcons
+              name="bar-chart"
+              size={16}
+              color="#6C757D"
+              style={{ marginRight: 6 }}
             />
             <Text style={styles.footerPillText}>{votes} votes</Text>
           </View>
@@ -423,12 +418,10 @@ export default function ReportsPage() {
             onPress={() => handleVote(item.id, "up")}
             disabled={submittingVote[item.id]}
           >
-            <Image
-              source={userVote === "up" ? arrowUpwardBold : arrowUpwardOutline}
-              style={[
-                styles.voteIcon,
-                userVote === "up" && styles.voteIconActive,
-              ]}
+            <Ionicons
+              name={userVote === "up" ? "arrow-up" : "arrow-up-outline"}
+              size={18}
+              color={userVote === "up" ? theme.Colors.primary : "#6C757D"}
             />
             <Text
               style={[
@@ -445,14 +438,10 @@ export default function ReportsPage() {
             onPress={() => handleVote(item.id, "down")}
             disabled={submittingVote[item.id]}
           >
-            <Image
-              source={
-                userVote === "down" ? arrowDownwardBold : arrowDownwardOutline
-              }
-              style={[
-                styles.voteIcon,
-                userVote === "down" && styles.voteIconActive,
-              ]}
+            <Ionicons
+              name={userVote === "down" ? "arrow-down" : "arrow-down-outline"}
+              size={18}
+              color={userVote === "down" ? "#E74C3C" : "#6C757D"}
             />
             <Text
               style={[
@@ -468,9 +457,10 @@ export default function ReportsPage() {
             style={styles.commentButton}
             onPress={() => handleToggleComments(item.id)}
           >
-            <Image
-              source={commentsOpen ? commentBold : commentOutline}
-              style={styles.commentIcon}
+            <Ionicons
+              name={commentsOpen ? "chatbubble" : "chatbubble-outline"}
+              size={18}
+              color="#6C757D"
             />
             <Text
               style={[

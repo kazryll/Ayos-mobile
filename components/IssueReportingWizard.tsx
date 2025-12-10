@@ -1,5 +1,6 @@
 // components/IssueReportingWizard.tsx
 
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { onAuthStateChanged } from "firebase/auth";
 import React, { JSX, useEffect, useRef, useState } from "react";
@@ -7,7 +8,6 @@ import {
     Alert,
     Animated,
     Easing,
-    Image,
     ScrollView,
     StyleSheet,
     Text,
@@ -273,10 +273,10 @@ const IssueReportingWizard: React.FC<IssueReportingWizardProps> = ({
                   opacity: iconOpacity,
                 }}
               >
-                <Image
-                  source={require("../assets/icons/correct.png")}
-                  style={styles.successIconImage}
-                  resizeMode="contain"
+                <Ionicons
+                  name="checkmark-circle"
+                  size={120}
+                  color={theme.Colors.primary}
                 />
               </Animated.View>
 

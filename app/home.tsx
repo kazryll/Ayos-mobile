@@ -1,7 +1,7 @@
 // screens/HomeScreen.tsx
 import {
-  subscribeToNotifications,
-  subscribeToActivityNotifications,
+    subscribeToActivityNotifications,
+    subscribeToNotifications,
 } from "@/services/notifications";
 import {
     getAllReports,

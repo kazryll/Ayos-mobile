@@ -1,9 +1,9 @@
 import {
-  collection,
-  onSnapshot,
-  orderBy,
-  query,
-  where,
+    collection,
+    onSnapshot,
+    orderBy,
+    query,
+    where,
 } from "firebase/firestore";
 import { db } from "../config/firebase";
 
@@ -193,7 +193,7 @@ export const formatTimeAgo = (timestamp) => {
   if (!timestamp) return "Unknown time";
 
   let date;
-  
+
   // Handle Firestore Timestamp object with toDate() method
   if (timestamp.toDate && typeof timestamp.toDate === "function") {
     date = timestamp.toDate();

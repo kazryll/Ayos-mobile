@@ -15,13 +15,13 @@ import {
 import BottomNav from "../components/BottomNav";
 import { auth } from "../config/firebase";
 import theme from "../config/theme";
+import {
+    formatActivityLog,
+    formatTimeAgo,
+    subscribeToActivityLogs,
+} from "../services/activityLogs";
 import { getUserReports } from "../services/reports";
 import { getUserStats } from "../services/userService";
-import {
-  formatActivityLog,
-  formatTimeAgo,
-  subscribeToActivityLogs,
-} from "../services/activityLogs";
 
 export default function ActivityScreen() {
   const router = useRouter();

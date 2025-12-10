@@ -190,13 +190,13 @@ export const subscribeToActivityNotifications = (userId) => {
               if (change.type === "added" && !processedActivityLogs.has(change.doc.id)) {
                 processedActivityLogs.add(change.doc.id);
                 const activityLog = change.doc.data();
-                
+
                 console.log(`🔔 New activity log detected:`, {
                   id: change.doc.id,
                   type: activityLog.type,
                   reportId: activityLog.reportId,
                 });
-                
+
                 // Only create notifications for citizen-relevant activities
                 const citizenRelevantTypes = [
                   "status_changed",

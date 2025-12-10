@@ -2,8 +2,8 @@ import theme from "@/config/theme";
 import {
     markAllNotificationsRead,
     markNotificationRead,
-    subscribeToNotifications,
     subscribeToActivityNotifications,
+    subscribeToNotifications,
 } from "@/services/notifications";
 import { getUserProfile } from "@/services/userService";
 import { Ionicons } from "@expo/vector-icons";

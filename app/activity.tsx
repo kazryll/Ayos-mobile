@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -89,58 +90,159 @@ export default function ActivityScreen() {
     return reports.reduce((acc, r) => acc + (r.views || 0), 0);
   };
 
+  const getReportCategory = (report: any) => {
+    if (report?.aiGeneratedAnalysis?.category) {
+      return report.aiGeneratedAnalysis.category;
+    }
+    if (report?.category) {
+      return report.category;
+    }
+    return "General";
+  };
+
+  const getCategoryDisplayName = (category: string) => {
+    const categoryMap: { [key: string]: string } = {
+      "Waste Management & Sanitation": "Waste & Sanitation",
+      "Water Supply & Drainage": "Water & Drainage",
+      "Electricity & Street Lighting": "Electricity & Lighting",
+      "Public Infrastructure & Facilities": "Infrastructure",
+      "Transportation & Traffic Management": "Transportation",
+      "Community Amenities & Environmental Concerns": "Environment",
+      "Public Health & Safety (Non-Emergency)": "Health & Safety",
+      "Animal & Veterinary Concerns": "Animal Welfare",
+      "Public Order & Minor Disturbances": "Public Order",
+      "Social Welfare & Accessibility": "Social Welfare",
+      "Governance & Transparency Reports": "Governance",
+    };
+    return categoryMap[category] || category;
+  };
+
+  const getCategoryIcon = (category: string) => {
+    const iconMap: { [key: string]: string } = {
+      "Waste Management & Sanitation": "trash-outline",
+      "Water Supply & Drainage": "water-outline",
+      "Electricity & Street Lighting": "bulb-outline",
+      "Public Infrastructure & Facilities": "business-outline",
+      "Transportation & Traffic Management": "car-outline",
+      "Community Amenities & Environmental Concerns": "leaf-outline",
+      "Public Health & Safety (Non-Emergency)": "medical-outline",
+      "Animal & Veterinary Concerns": "paw-outline",
+      "Public Order & Minor Disturbances": "alert-circle-outline",
+      "Social Welfare & Accessibility": "people-outline",
+      "Governance & Transparency Reports": "document-text-outline",
+    };
+    return iconMap[category] || "information-circle-outline";
+  };
+
+  const getCategoryColor = (category: string) => {
+    const colorMap: { [key: string]: string } = {
+      "Waste Management & Sanitation": "#A0826D",
+      "Water Supply & Drainage": "#6BB6FF",
+      "Electricity & Street Lighting": "#E8B339",
+      "Public Infrastructure & Facilities": "#8B9DAF",
+      "Transportation & Traffic Management": "#FF7F6E",
+      "Community Amenities & Environmental Concerns": "#6BCF7F",
+      "Public Health & Safety (Non-Emergency)": "#E85D6B",
+      "Animal & Veterinary Concerns": "#FF8BBF",
+      "Public Order & Minor Disturbances": "#FFA347",
+      "Social Welfare & Accessibility": "#B090E0",
+      "Governance & Transparency Reports": "#6B9FD4",
+    };
+    return colorMap[category] || "#8B94A1";
+  };
+
+  const getStatusColor = (status: string) => {
+    const normalized = (status || "for_approval").toLowerCase().replace(/_/g, "-");
+    const colors: Record<string, string> = {
+      "for-approval": "#F5A524",
+      "approved": "#00B894",
+      "rejected": "#E74C3C",
+      "in-progress": "#42A5F5",
+      "resolved": "#2ECC71",
+    };
+    return colors[normalized] || "#B0BEC5";
+  };
+
   const renderReportItem = ({ item }: { item: any }) => {
+    const category = getReportCategory(item);
+    const statusKey = (item.status || "for_approval").toLowerCase().replace(/_/g, "-");
+    const statusColor = getStatusColor(item.status);
+    const statusLabel = ((item.status || "for_approval") as string)
+      .replace(/[_\-]/g, " ")
+      .split(" ")
+      .map((segment: string) =>
+        segment ? segment.charAt(0).toUpperCase() + segment.slice(1) : ""
+      )
+      .join(" ")
+      .trim();
+
     return (
-      <TouchableOpacity style={styles.reportItem} onPress={() => {}}>
-        <View style={styles.reportInfo}>
-          <View style={styles.reportHeader}>
-            <Text style={styles.reportTitle}>
-              {item.aiGeneratedAnalysis?.title || "Untitled"}
+      <TouchableOpacity style={styles.reportCard} onPress={() => {}}>
+        {/* Status Indicator Bar - Left edge color indicator */}
+        <View style={[styles.statusIndicator, { backgroundColor: statusColor }]} />
+
+        <View style={styles.cardContent}>
+          {/* Date Badge - Top right corner */}
+          <View style={styles.dateBadge}>
+            <Ionicons name="calendar-outline" size={10} color="#6C757D" />
+            <Text style={styles.dateText}>
+              {(() => {
+                const date =
+                  item.createdAt?.toDate?.() || new Date(item.createdAt);
+                const now = new Date();
+                const diffMs = now.getTime() - date.getTime();
+                const diffDays = Math.floor(diffMs / 86400000);
+
+                if (diffDays === 0) return "Today";
+                if (diffDays === 1) return "Yesterday";
+                if (diffDays < 7) return `${diffDays}d ago`;
+                return date.toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                });
+              })()}
             </Text>
+          </View>
+
+          {/* Title */}
+          <Text style={styles.cardTitle}>
+            {item.aiGeneratedAnalysis?.title ||
+              item.originalDescription?.slice(0, 60) ||
+              "Untitled report"}
+          </Text>
+
+          {/* Badges Row - Category + Status side by side */}
+          <View style={styles.badgesRow}>
             <View
               style={[
                 styles.categoryBadge,
-                { backgroundColor: item.categoryColor || "#6C757D" },
+                { backgroundColor: getCategoryColor(category) },
               ]}
             >
+              <Ionicons
+                name={getCategoryIcon(category) as any}
+                size={10}
+                color="white"
+                style={{ marginRight: 3 }}
+              />
               <Text style={styles.categoryBadgeText}>
-                {item.aiGeneratedAnalysis?.category || "General"}
+                {getCategoryDisplayName(category)}
               </Text>
+            </View>
+            <View
+              style={[styles.statusBadge, { backgroundColor: statusColor }]}
+            >
+              <Text style={styles.statusBadgeText}>{statusLabel}</Text>
             </View>
           </View>
 
-          <Text style={styles.reportLocation}>
-            📍 {item.location?.address || item.location || "Unknown"}
-          </Text>
-          <Text style={styles.reportDate}>
-            📅{" "}
-            {item.createdAt?.toDate
-              ? item.createdAt.toDate().toLocaleDateString()
-              : new Date(item.createdAt || Date.now()).toLocaleDateString()}
-          </Text>
-        </View>
-
-        <View
-          style={[
-            styles.statusBadge,
-            item.status === "resolved"
-              ? styles.resolvedBadge
-              : item.status === "in-progress"
-              ? styles.inProgressBadge
-              : item.status === "approved"
-              ? styles.approvedBadge
-              : item.status === "for_approval"
-              ? styles.forApprovalBadge
-              : item.status === "rejected"
-              ? styles.rejectedBadge
-              : styles.pendingBadge,
-          ]}
-        >
-          <Text style={styles.statusText}>
-            {(item.status || "for_approval")
-              .replace(/-/g, " ")
-              .replace(/\b\w/g, (c: string) => c.toUpperCase())}
-          </Text>
+          {/* Location Row */}
+          <View style={styles.locationRow}>
+            <Ionicons name="location-outline" size={12} color="#6C757D" />
+            <Text style={styles.locationText}>
+              {item.location?.barangay || item.location?.city || "Baguio City"}
+            </Text>
+          </View>
         </View>
       </TouchableOpacity>
     );
@@ -326,78 +428,88 @@ const styles = StyleSheet.create({
     color: "white",
   },
   section: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     paddingBottom: 80,
   },
-  reportItem: {
+  reportCard: {
     backgroundColor: "white",
     borderRadius: 12,
-    padding: 14,
     marginBottom: 12,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
   },
-  reportInfo: {
+  statusIndicator: {
+    width: 4,
+  },
+  cardContent: {
     flex: 1,
-    marginRight: 12,
+    padding: 14,
   },
-  reportHeader: {
+  dateBadge: {
+    position: "absolute",
+    top: 12,
+    right: 12,
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 6,
+    backgroundColor: "#F1F5F9",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 4,
   },
-  reportTitle: {
-    fontSize: 16,
+  dateText: {
+    fontSize: 10,
+    color: "#6C757D",
+    fontWeight: "600",
+  },
+  cardTitle: {
+    fontSize: 15,
     fontWeight: "700",
-    flex: 1,
+    color: "#0F172A",
+    marginBottom: 10,
+    marginRight: 80,
+    lineHeight: 20,
+  },
+  badgesRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginBottom: 8,
   },
   categoryBadge: {
-    paddingVertical: 4,
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 8,
-    borderRadius: 8,
-    marginLeft: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
   },
   categoryBadgeText: {
-    fontSize: 12,
+    fontSize: 10,
+    fontWeight: "600",
     color: "white",
-  },
-  reportLocation: {
-    color: "#6C757D",
-    fontSize: 13,
-    marginTop: 4,
-  },
-  reportDate: {
-    color: "#6C757D",
-    fontSize: 13,
-    marginTop: 4,
   },
   statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
   },
-  forApprovalBadge: {
-    backgroundColor: "#F5A524",
-  },
-  approvedBadge: {
-    backgroundColor: "#00B894",
-  },
-  rejectedBadge: {
-    backgroundColor: "#E74C3C",
-  },
-  pendingBadge: {
-    backgroundColor: "#FFD966",
-  },
-  inProgressBadge: {
-    backgroundColor: "#3B82F6",
-  },
-  resolvedBadge: {
-    backgroundColor: "#10B981",
-  },
-  statusText: {
-    fontWeight: "700",
+  statusBadgeText: {
+    fontSize: 10,
+    fontWeight: "600",
     color: "white",
+  },
+  locationRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  locationText: {
+    fontSize: 12,
+    color: "#6C757D",
   },
   noReportsContainer: {
     padding: 20,

@@ -116,10 +116,10 @@ export default function HomeScreen() {
   const requestUserLocation = async () => {
     try {
       setLocationLoading(true);
-      
+
       // Request location permissions
       const { status } = await Location.requestForegroundPermissionsAsync();
-      
+
       if (status !== "granted") {
         Alert.alert(
           "Location Permission Required",
@@ -992,7 +992,7 @@ export default function HomeScreen() {
                       </div>
                     </OverlayView>
                   )}
-                  
+
                   {/* Report markers */}
                   {mapMarkers.map((m) => (
                     <OverlayView

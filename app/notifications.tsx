@@ -219,11 +219,6 @@ export default function NotificationsScreen() {
           // Enrich notifications with actor names
           const enriched = await enrichNotifications(notificationsList);
           setNotifications(enriched);
-
-          // Mark all as read
-          if (enriched.length > 0) {
-            await markAllNotificationsRead(user.uid);
-          }
         } catch (error) {
           console.error("Error enriching notifications:", error);
         } finally {
@@ -257,6 +252,20 @@ export default function NotificationsScreen() {
         notif.id === notificationId ? { ...notif, read: true } : notif
       )
     );
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+      
+      await markAllNotificationsRead(user.uid);
+      setNotifications((prev) =>
+        prev.map((notif) => ({ ...notif, read: true }))
+      );
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+    }
   };
 
   const renderItem = ({ item }: { item: any }) => (
@@ -300,7 +309,16 @@ export default function NotificationsScreen() {
             <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.heroTitle}>Notifications</Text>
-          <View style={{ width: 40 }} />
+          {notifications.filter((n) => !n.read).length > 0 ? (
+            <TouchableOpacity
+              style={styles.markAllButton}
+              onPress={handleMarkAllAsRead}
+            >
+              <Ionicons name="checkmark-done" size={20} color="#fff" />
+            </TouchableOpacity>
+          ) : (
+            <View style={{ width: 40 }} />
+          )}
         </View>
       </LinearGradient>
 
@@ -357,6 +375,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
+  markAllButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
   backButtonText: {
     color: "#fff",
     fontSize: 18,
@@ -379,9 +401,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 10,
     elevation: 3,
+    borderWidth: 2,
+    borderColor: theme.Colors.primary,
   },
   cardRead: {
-    opacity: 0.7,
+    opacity: 0.6,
+    borderColor: "transparent",
+    backgroundColor: "#F8FAFC",
   },
   cardHeader: {
     flexDirection: "row",
